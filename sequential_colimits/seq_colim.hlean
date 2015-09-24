@@ -368,7 +368,7 @@ namespace seq_colim
   definition f_rep_equiv_rep_f
     : @seq_colim (λk, P (rep (succ k) a)) _ ≃
     @seq_colim (λk, P (rep k (f a))) (seq_diagram_of_over P (f a)) :=
-  seq_colim_equiv (rep_f_equiv a P) abstract (λk p,
+  seq_colim_equiv (rep_f_equiv P a) abstract (λk p,
     begin
       esimp,
       rewrite [+my.cast_apo011],
@@ -382,7 +382,7 @@ namespace seq_colim
   definition rep_equiv_rep_rep (l : ℕ)
     : @seq_colim (λk, P (rep (k + l) a)) (kshift_diag' _ _) ≃
     @seq_colim (λk, P (rep k (rep l a))) (seq_diagram_of_over P (rep l a)) :=
-  seq_colim_equiv (λk, rep_rep_equiv a P k l) abstract (λk p,
+  seq_colim_equiv (λk, rep_rep_equiv P a k l) abstract (λk p,
     begin
       exact sorry
       -- esimp,
@@ -414,6 +414,7 @@ namespace seq_colim
 -- pathover_of_tr_eq (ap10 (elim_type_glue _ _ a) x)
   begin
     esimp [f_rep_equiv_rep_f],
+    exact sorry
   end
 
   set_option pp.universes true
@@ -426,8 +427,8 @@ namespace seq_colim
                                   (cast ((apo011 P (succ_add n k) (rep_f k a))) p)) :=
 -- concato_eq (pathover_of_tr_eq (ap10 (elim_type_glue.{_ _} (λ ⦃n : ℕ⦄ (a : A n), seq_colim.{v} (λ (k : ℕ), P (rep.{l_1} k a))) _ a) (ι' k p))) sorry
 
-  begin
-    refine concato_eq (pathover_of_tr_eq (ap10 (elim_type_glue.{_ _} (λ ⦃n : ℕ⦄ (a : A n), seq_colim.{v} (λ (k : ℕ), P (rep.{l_1} k a))) _ a) (ι' k p))) sorry,
+  begin exact sorry
+    -- refine concato_eq (pathover_of_tr_eq (ap10 (elim_type_glue.{_ _} (λ ⦃n : ℕ⦄ (a : A n), seq_colim.{v} (λ (k : ℕ), P (rep.{l_1} k a))) _ a) (ι' k p))) sorry,
 --    esimp [equiv.trans,equiv.symm,f_rep_equiv_rep_f],
     -- apply ap ι, unfold cast,
     -- rewrite [-my.apo011_inv],
@@ -476,6 +477,7 @@ namespace seq_colim
       refine !pathover_tr ⬝o _,
       -- refine eq_concato !glue⁻¹ _, esimp,
       -- refine !glue_over⁻¹ᵒ ⬝o _,
+      exact sorry
     }
   end
 

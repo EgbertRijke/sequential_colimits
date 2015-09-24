@@ -50,10 +50,7 @@ namespace seq_colim
     λ n a, B n
 
   definition wkseq_diagram (B : ℕ → Type) (g : @seq_diagram B) : @depseq_diagram A f (wkseq_carrier B g) :=
-    begin
-      unfold depseq_diagram,
-      unfold wkseq_carrier,
-    end
+    λ n a, (@g n)
 
   end dependent_sequences
 
