@@ -378,20 +378,18 @@ namespace seq_colim
       rewrite [my.apo_invo,my.apo_tro]
     end) end
 
-  set_option class.trace_instances true
-  definition rep_equiv_rep_rep (l : ℕ)
-    : @seq_colim (λk, P (rep (k + l) a)) (kshift_diag' _ _) ≃
-    @seq_colim (λk, P (rep k (rep l a))) (seq_diagram_of_over P (rep l a)) :=
-  seq_colim_equiv (λk, rep_rep_equiv P a k l) abstract (λk p,
-    begin
-      exact sorry
-      -- esimp,
-      -- rewrite [+my.cast_apo011],
-      -- refine _ ⬝ (my.fn_tro_eq_tro_fn (rep_f k a)⁻¹ᵒ g p)⁻¹,
-      -- rewrite [↑rep_f,↓rep_f k a],
-      -- refine !my.pathover_ap_invo_tro ⬝ _,
-      -- rewrite [my.apo_invo,my.apo_tro]
-    end) end
+  -- definition rep_equiv_rep_rep (l : ℕ)
+  --   : @seq_colim (λk, P (rep (k + l) a)) (kshift_diag' _ _) ≃
+  --   @seq_colim (λk, P (rep k (rep l a))) (seq_diagram_of_over P (rep l a)) :=
+  -- seq_colim_equiv (λk, rep_rep_equiv P a k l) abstract (λk p,
+  --   begin
+  --     esimp,
+  --     rewrite [+my.cast_apo011],
+  --     refine _ ⬝ (my.fn_tro_eq_tro_fn (rep_f k a)⁻¹ᵒ g p)⁻¹ᵖ,
+  --     rewrite [↑rep_f,↓rep_f k a],
+  --     refine !my.pathover_ap_invo_tro ⬝ _,
+  --     rewrite [my.apo_invo,my.apo_tro]
+  --   end) end
 
 
   definition seq_colim_over [unfold 5] (x : seq_colim A) : Type.{v} :=
@@ -417,23 +415,23 @@ namespace seq_colim
     exact sorry
   end
 
-  set_option pp.universes true
-  check @elim_type_glue
-  check @seq_colim
-  check @seq_diagram
-  set_option formatter.hide_full_terms false
-  definition seq_colim_over_glue' (k : ℕ) (p : P (rep k (f a)))
-    : pathover (seq_colim_over P) (ι' k p) (glue a) (ι' (succ k)
-                                  (cast ((apo011 P (succ_add n k) (rep_f k a))) p)) :=
+  -- set_option pp.universes true
+  -- check @elim_type_glue
+  -- check @seq_colim
+  -- check @seq_diagram
+  -- set_option formatter.hide_full_terms false
+  -- definition seq_colim_over_glue' (k : ℕ) (p : P (rep k (f a)))
+  --   : pathover (seq_colim_over P) (ι' k p) (glue a) (ι' (succ k)
+  --                                 (cast ((apo011 P (succ_add n k) (rep_f k a))) p)) :=
 -- concato_eq (pathover_of_tr_eq (ap10 (elim_type_glue.{_ _} (λ ⦃n : ℕ⦄ (a : A n), seq_colim.{v} (λ (k : ℕ), P (rep.{l_1} k a))) _ a) (ι' k p))) sorry
 
-  begin exact sorry
+--  begin exact sorry
     -- refine concato_eq (pathover_of_tr_eq (ap10 (elim_type_glue.{_ _} (λ ⦃n : ℕ⦄ (a : A n), seq_colim.{v} (λ (k : ℕ), P (rep.{l_1} k a))) _ a) (ι' k p))) sorry,
 --    esimp [equiv.trans,equiv.symm,f_rep_equiv_rep_f],
     -- apply ap ι, unfold cast,
     -- rewrite [-my.apo011_inv],
 --    exact sorry
-  end
+--  end
 
   -- definition seq_colim_over_glue' {k : ℕ} (p : P (rep k (f a)))
   --   : pathover (seq_colim_over P) (ι' k p) (glue a) (shift_down ((to_fun (f_rep_equiv_rep_f a P))⁻¹ (ι' k p))) :=
