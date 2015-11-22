@@ -31,7 +31,7 @@ namespace seq_colim
 
   abbreviation ι' [constructor] := @inclusion
   variable {n}
-  abbreviation ι [constructor] [parsing-only] := @inclusion n
+  abbreviation ι [constructor] [parsing_only] := @inclusion n
 
   definition glue : ι (f a) = ι a :=
   eq_of_rel seq_rel (Rmk a)
@@ -283,7 +283,6 @@ namespace seq_colim
   end
 
   include f p
-  --set_option pp.notation false
   definition is_equiv_seq_colim_functor [constructor] [H : Πn, is_equiv (g : A n → A' n)]
      : is_equiv (seq_colim_functor @g p) :=
   adjointify _ (seq_colim_functor (λn, g⁻¹) (λn a, inv_commute' @g @f @f' p a))
@@ -378,6 +377,14 @@ namespace seq_colim
       rewrite [my.apo_invo,my.apo_tro]
     end) end
 
+  definition seq_colim_over [unfold 5] (x : seq_colim A) : Type.{v} :=
+  begin
+    fapply seq_colim.elim_type_on x,
+    { intro n a, exact seq_colim (λk, P (rep k a))},
+    { intro n a, symmetry,
+      refine !shift_equiv ⬝e !f_rep_equiv_rep_f}
+  end
+
   -- definition rep_equiv_rep_rep (l : ℕ)
   --   : @seq_colim (λk, P (rep (k + l) a)) (kshift_diag' _ _) ≃
   --   @seq_colim (λk, P (rep k (rep l a))) (seq_diagram_of_over P (rep l a)) :=
@@ -391,14 +398,6 @@ namespace seq_colim
   --     rewrite [my.apo_invo,my.apo_tro]
   --   end) end
 
-
-  definition seq_colim_over [unfold 5] (x : seq_colim A) : Type.{v} :=
-  begin
-    fapply seq_colim.elim_type_on x,
-    { intro n a, exact seq_colim (λk, P (rep k a))},
-    { intro n a, symmetry,
-      refine !shift_equiv ⬝e !f_rep_equiv_rep_f}
-  end
 
   variable {P}
   -- theorem seq_colim_over_glue (x : seq_colim_over P (ι (f a)))

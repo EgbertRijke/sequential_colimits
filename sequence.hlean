@@ -149,13 +149,11 @@ namespace seq_colim
   begin
     induction l with l IH,
     { esimp [rep, my.add_add, add], constructor},
-    { exact sorry
-      -- rewrite [▸rep k (f (rep l a)) =[ succ_add (n + l) k ⬝ ap succ (my.add_add n l k)]
-      --           f (rep (k + l) a)],
-      -- refine rep_f k (rep l a) ⬝o _,
-      -- rewrite [▸f (rep k (rep l a)) =[ ap succ (my.add_add n l k) ] f (rep (k + l) a)],
-      -- apply pathover_ap, exact apo f IH
-      }
+    { rewrite [▸rep k (f (rep l a)) =[ succ_add (n + l) k ⬝ ap succ (my.add_add n l k)]
+                f (rep (k + l) a)],
+      refine rep_f k (rep l a) ⬝o _,
+      rewrite [▸f (rep k (rep l a)) =[ ap succ (my.add_add n l k) ] f (rep (k + l) a)],
+      apply pathover_ap, exact apo f IH}
   end
 
   definition f_rep (k : ℕ) (a : A n) : f (rep k a) = rep (succ k) a := idp
@@ -163,14 +161,14 @@ namespace seq_colim
 
   section shift
   variable (A)
-  definition shift_diag [instance] [unfold-full] : seq_diagram (λn, A (succ n)) :=
+  definition shift_diag [instance] [unfold_full] : seq_diagram (λn, A (succ n)) :=
   λn a, f a
 
-  definition kshift_diag [instance] [unfold-full] [priority 800] (k : ℕ)
+  definition kshift_diag [instance] [unfold_full] [priority 800] (k : ℕ)
     : seq_diagram (λn, A (k + n)) :=
   λn a, f a
 
-  definition kshift_diag' [instance] [unfold-full] [priority 800] (k : ℕ)
+  definition kshift_diag' [instance] [unfold_full] [priority 800] (k : ℕ)
     : seq_diagram (λn, A (n + k)) :=
   λn a, !succ_add⁻¹ ▸ f a
   end shift
@@ -183,7 +181,7 @@ namespace seq_colim
       seq_diagram (λ n, X) :=
       λ n x, x
 
-    definition arrow_left_diag [instance] [unfold-full] (X : Type) :
+    definition arrow_left_diag [instance] [unfold_full] (X : Type) :
       seq_diagram (λn, X → A n) :=
       λn g x, f (g x)
 
@@ -216,7 +214,7 @@ namespace seq_colim
 
     variable [g : seq_diagram_over P]
     include g
-    definition seq_diagram_of_over [instance] [unfold-full] {n : ℕ} (a : A n) :
+    definition seq_diagram_of_over [instance] [unfold_full] {n : ℕ} (a : A n) :
       seq_diagram (λk, P (rep k a)) :=
       λk p, g p
 
@@ -236,21 +234,25 @@ namespace seq_colim
   end over
 
   section sequential_transformations
-  -- We define the notion of sequential transformation into the type sequence ⟨A,f⟩, which is basically a natural transformation of presheaves on ⟨ℕ,≤⟩. Another way of looking at sequential transformations is that a sequential transformation from ⟨B,g⟩ to ⟨A,f⟩ is a term of the dependent type sequence "⟨A,f⟩ weakened by ⟨B,g⟩" over ⟨B,g⟩. A sequential transformation is an equivalence if all its components are. We give some very simple examples of sequential transformations, including rep0 and the natural map to the shifted sequence.
-
+  /-
+    We define the notion of sequential transformation into the type sequence ⟨A,f⟩,
+    which is basically a natural transformation of presheaves on ⟨ℕ,≤⟩.
+    Another way of looking at sequential transformations is that a sequential transformation from
+    ⟨B,g⟩ to ⟨A,f⟩ is a term of the dependent type sequence "⟨A,f⟩ weakened by ⟨B,g⟩" over ⟨B,g⟩.
+    A sequential transformation is an equivalence if all its components are.
+    We give some very simple examples of sequential transformations,
+    including rep0 and the natural map to the shifted sequence.
+  -/
     definition seq_trans_carrier {B : ℕ → Type} (g : seq_diagram B) : Type :=
       forall (n : ℕ), B n → A n
 
-    check seq_trans_carrier
-
-    definition seq_trans_natural [class] {B : ℕ → Type} (g : seq_diagram B) (t : @seq_trans_carrier A f B g) : Type :=
-      forall (n : ℕ) (b : B n), f (t n b) = t (succ n) (g b)
+    definition seq_trans_natural [class] {B : ℕ → Type} (g : seq_diagram B)
+      (t : @seq_trans_carrier A f B g) : Type :=
+    forall (n : ℕ) (b : B n), f (t n b) = t (succ n) (g b)
 
     definition seq_trans_isequiv {B : ℕ → Type} (g : seq_diagram B)
       (t : @seq_trans_carrier _ f _ g) (H : @seq_trans_natural _ _ _ _ t) : Type :=
-      forall ⦃n : ℕ⦄, is_equiv (t n)
-
-    check constant_seq
+    forall ⦃n : ℕ⦄, is_equiv (t n)
 
     definition rep0_into : seq_trans_natural (constant_seq (A 0)) rep0 :=
       begin
@@ -259,8 +261,9 @@ namespace seq_colim
       unfold rep0,
       end
 
-    definition rep0_into_equiseq_isequiv (H : is_equiseq f) : seq_trans_isequiv (constant_seq (A 0)) rep0 rep0_into :=
-      rep0_equiseq_is_equiv
+    definition rep0_into_equiseq_isequiv (H : is_equiseq f)
+      : seq_trans_isequiv (constant_seq (A 0)) rep0 rep0_into :=
+    rep0_equiseq_is_equiv
 
   end sequential_transformations
 
