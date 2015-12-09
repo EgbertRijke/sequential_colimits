@@ -385,6 +385,9 @@ namespace seq_colim
       refine !shift_equiv ⬝e !f_rep_equiv_rep_f}
   end
 
+  -- set_option pp.implicit true
+  -- print seq_colim_over
+
   -- definition rep_equiv_rep_rep (l : ℕ)
   --   : @seq_colim (λk, P (rep (k + l) a)) (kshift_diag' _ _) ≃
   --   @seq_colim (λk, P (rep k (rep l a))) (seq_diagram_of_over P (rep l a)) :=
@@ -538,6 +541,44 @@ namespace seq_colim
            sorry
            sorry
 
+
+  /- try to prove the equivalence by using flattening -/
+
+  /-
+  definition goal_def1 : seq_diagram_over (λ (n : ℕ) (x : A n), seq_colim (λ (k : ℕ), P (rep k x))) :=
+  begin
+    intro n a x,
+    apply shift_diag P,
+  end
+
+  definition goal : @(seq_colim (λn, Σ(x : A n), seq_colim (λk, P (rep k x)))) begin end
+                    ≃ seq_colim (λn, Σ(x : A n), P x) :=
+  _
+  -/
+
   end over
+
+  /- try to prove the equivalence by mimicing the flattening lemma proof -/
+
+
+  namespace sigma_colim
+
+  variables (P : Π⦃n⦄, A n → Type) [g : seq_diagram_over P]
+  include g
+
+  definition Sincl (v : Σ(x : A n), P x) : Σ(x : seq_colim A), seq_colim_over P x :=
+  ⟨ι v.1, @ι _ _ 0 v.2⟩
+
+  definition Sglue (v : Σ(x : A n), P x) : Sincl P (seq_diagram_sigma P v) = Sincl P v :=
+  sigma_eq !glue (!glue_over ⬝op glue v.2)
+
+  protected definition rec {Q : (Σ(x : seq_colim A), seq_colim_over P x) → Type}
+    (Qincl : Π⦃n : ℕ⦄ (v : Σ(x : A n), P x), Q (Sincl P v))
+    (Qglue : Π⦃n : ℕ⦄ (v : Σ(x : A n), P x), Qincl (seq_diagram_sigma P v) =[Sglue P v] Qincl v)
+    (v : Σ(x : seq_colim A), seq_colim_over P x) : Q v :=
+  sorry
+
+  end sigma_colim
+
 
 end seq_colim

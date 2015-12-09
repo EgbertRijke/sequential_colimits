@@ -109,9 +109,8 @@ namespace seq_colim
   definition rep_f (k : ℕ) (a : A n) : rep k (f a) =[succ_add n k] rep (succ k) a :=
   begin
     induction k with k IH,
-    { esimp [succ_add], constructor},
-    { esimp [succ_add,add_succ], apply pathover_ap,
-      exact apo f IH}
+    { constructor},
+    { apply pathover_ap, exact apo f IH}
   end
 
   definition  rep_equiseq_back [H : is_equiseq f] (k : ℕ) (a : A (n + k)) : A n :=
@@ -145,14 +144,14 @@ namespace seq_colim
     exact IH b,
   end
 
-  definition rep_rep (k l : ℕ) (a : A n) : rep k (rep l a) =[my.add_add n l k] rep (k + l) a :=
+  definition rep_rep (k l : ℕ) (a : A n) : rep k (rep l a) =[nat.add_add n l k] rep (k + l) a :=
   begin
     induction l with l IH,
-    { esimp [rep, my.add_add, add], constructor},
-    { rewrite [▸rep k (f (rep l a)) =[ succ_add (n + l) k ⬝ ap succ (my.add_add n l k)]
+    { esimp [rep, nat.add_add, add], constructor},
+    { rewrite [▸rep k (f (rep l a)) =[ succ_add (n + l) k ⬝ ap succ (nat.add_add n l k)]
                 f (rep (k + l) a)],
       refine rep_f k (rep l a) ⬝o _,
-      rewrite [▸f (rep k (rep l a)) =[ ap succ (my.add_add n l k) ] f (rep (k + l) a)],
+      rewrite [▸f (rep k (rep l a)) =[ ap succ (nat.add_add n l k) ] f (rep (k + l) a)],
       apply pathover_ap, exact apo f IH}
   end
 

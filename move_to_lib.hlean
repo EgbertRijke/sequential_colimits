@@ -7,7 +7,7 @@ Authors: Floris van Doorn, Egbert Rijke
 -- these definitions and theorems should be moved to the HoTT library
 
 import types.nat
-open eq nat
+open eq nat algebra
 namespace my
 variables {A A' : Type} {B B' : A → Type} {C : Π⦃a⦄, B a → Type}
           {a a₂ a₃ a₄ : A} {p p' : a = a₂} {p₂ : a₂ = a₃} {p₃ : a₃ = a₄}
@@ -47,20 +47,6 @@ variables {A A' : Type} {B B' : A → Type} {C : Π⦃a⦄, B a → Type}
     {b : B' (f a)} {b₂ : B' (f a₂)} (q : b =[p] b₂)
     : pathover_ap B' f q⁻¹ᵒ =[ap_inv f p] (pathover_ap B' f q)⁻¹ᵒ :=
   by induction q; exact idpo
-
-  definition add_add (n l k : ℕ) : n + l + k = n + (k + l) :=
-  begin
-    induction l with l IH,
-      reflexivity,
-      exact succ_add (n + l) k ⬝ ap succ IH
-  end
-
-  definition add.comm (n m : ℕ) : n + m = m + n :=
-  begin
-    induction n with n IH,
-    { apply zero_add},
-    { exact !succ_add ⬝ ap succ IH}
-  end
 
   definition apo011_inv (f : Πa, B a → A') (Ha : a = a₂) (Hb : b =[Ha] b₂)
       : (apo011 f Ha Hb)⁻¹ = (apo011 f Ha⁻¹ Hb⁻¹ᵒ) :=
