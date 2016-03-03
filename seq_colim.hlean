@@ -5,7 +5,7 @@ Authors: Floris van Doorn, Egbert Rijke
 -/
 import hit.quotient .sequence cubical.squareover types.arrow .move_to_lib types.equiv
 
-open eq nat sigma sigma.ops quotient equiv equiv.ops pi is_trunc is_equiv fiber
+open eq nat sigma sigma.ops quotient equiv pi is_trunc is_equiv fiber
 
 namespace seq_colim
 
