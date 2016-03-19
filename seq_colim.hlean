@@ -53,7 +53,7 @@ namespace seq_colim
 
   theorem rec_glue {P : seq_colim → Type} (Pincl : Π⦃n : ℕ⦄ (a : A n), P (ι a))
     (Pglue : Π⦃n : ℕ⦄ (a : A n), Pincl (f a) =[glue a] Pincl a) {n : ℕ} (a : A n)
-      : apdo (rec Pincl Pglue) (glue a) = Pglue a :=
+      : apd (rec Pincl Pglue) (glue a) = Pglue a :=
   !rec_eq_of_rel
 
   protected definition elim {P : Type} (Pincl : Π⦃n : ℕ⦄ (a : A n), P)
@@ -70,7 +70,7 @@ namespace seq_colim
       : ap (elim Pincl Pglue) (glue a) = Pglue a :=
   begin
     apply eq_of_fn_eq_fn_inv !(pathover_constant (glue a)),
-    rewrite [▸*,-apdo_eq_pathover_of_eq_ap,↑elim,rec_glue],
+    rewrite [▸*,-apd_eq_pathover_of_eq_ap,↑elim,rec_glue],
   end
 
   protected definition elim_type (Pincl : Π⦃n : ℕ⦄ (a : A n), Type)
@@ -295,7 +295,7 @@ namespace seq_colim
                    -ap_compose,↑[function.compose],ap_compose ι g,ap_inv_commute',+ap_con,con.assoc,
                    +ap_inv,inv_con_cancel_left,con.assoc,-ap_compose],
                  apply whisker_tl, apply move_left_of_top, esimp,
-                 apply transpose, apply square_of_pathover, apply apdo}
+                 apply transpose, apply square_of_pathover, apply apd}
              end end
              abstract begin
                intro x, induction x,
@@ -306,7 +306,7 @@ namespace seq_colim
                    -ap_compose,↑[function.compose],ap_compose ι g⁻¹,inv_commute'_fn,+ap_con,
                    con.assoc,con.assoc,+ap_inv,con_inv_cancel_left,-ap_compose],
                  apply whisker_tl, apply move_left_of_top, esimp,
-                 apply transpose, apply square_of_pathover, apply apdo}
+                 apply transpose, apply square_of_pathover, apply apd}
              end end
 
   omit p
@@ -324,7 +324,7 @@ namespace seq_colim
   omit f
   definition eq_pathover_dep {A : Type} {B : A → Type} {a a' : A}
     {f g : Πa, B a} {p : a = a'} {q : f a = g a} {r : f a' = g a'}
-    (s : squareover B !hrfl (pathover_idp_of_eq q) (pathover_idp_of_eq r) (apdo f p) (apdo g p))
+    (s : squareover B !hrfl (pathover_idp_of_eq q) (pathover_idp_of_eq r) (apd f p) (apd g p))
       : q =[p] r :=
   begin
     induction p, apply pathover_idp_of_eq,
@@ -341,7 +341,7 @@ namespace seq_colim
           → (Π (aa : seq_colim A), P aa)) :=
   begin
     fapply adjointify,
-    { intro f, exact ⟨λn a, f (ι a), λn a, apdo f (glue a)⟩},
+    { intro f, exact ⟨λn a, f (ι a), λn a, apd f (glue a)⟩},
     { intro f, apply eq_of_homotopy, intro x, induction x,
       { reflexivity},
       { apply eq_pathover_dep, esimp, apply hdeg_squareover, apply rec_glue}},
