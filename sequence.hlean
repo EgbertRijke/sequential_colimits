@@ -11,94 +11,98 @@ open nat eq equiv sigma sigma.ops is_equiv
 namespace seq_colim
 -- Type sequences are basically presheaves on ⟨ℕ,≤⟩. They form a model of type theory, so we define not only type sequences, but also dependent type sequences and terms thereof.
 
-  definition seq_diagram [class] (A : ℕ → Type) : Type := Π⦃n⦄, A n → A (succ n)
-  -- structure seq_diagram [class] (A : ℕ → Type) : Type :=
-  -- (f : Πn, A n → A (succ n))
+  definition seq_diagram [reducible] (A : ℕ → Type) : Type := Π⦃n⦄, A n → A (succ n)
 
   structure Seq_diagram : Type :=
     (carrier : ℕ → Type)
     (struct : seq_diagram carrier)
 
-  definition is_equiseq [class] {A : ℕ → Type} (f : seq_diagram A) : Type := forall (n : ℕ), is_equiv (@f n)
+  definition is_equiseq [reducible] {A : ℕ → Type} (f : seq_diagram A) : Type :=
+  forall (n : ℕ), is_equiv (@f n)
 
   structure Equi_seq : Type :=
     (carrier : ℕ → Type)
     (maps : seq_diagram carrier)
     (prop : is_equiseq maps)
 
-  definition is_equiv_of_equiseq [instance] {A : ℕ → Type} (f : seq_diagram A) [H : is_equiseq f] : forall (n : ℕ), is_equiv (@f n) :=
-    H
+  definition is_equiv_of_equiseq {A : ℕ → Type} (f : seq_diagram A) [H : is_equiseq f] :
+    forall (n : ℕ), is_equiv (@f n) :=
+  H
 
   section dependent_sequences
 
-  variable {A : ℕ → Type}
+  variable (A : ℕ → Type)
   variable (f : seq_diagram A)
 
-  definition depseq_carrier : Type :=
-    forall ⦃n : ℕ⦄, A n → Type
+  definition depseq_carrier [reducible] : Type :=
+  forall ⦃n : ℕ⦄, A n → Type
 
-  definition depseq_diagram (P : depseq_carrier) : Type :=
-    forall ⦃n : ℕ⦄ ⦃a : A n⦄, P a → P (f a)
+  variable {A}
+  definition depseq_diagram [reducible] (P : depseq_carrier A) : Type :=
+  forall ⦃n : ℕ⦄ ⦃a : A n⦄, P a → P (f a)
 
-  definition tmseq_carrier {P : depseq_carrier} (g : depseq_diagram f P) : Type :=
-    forall ⦃n : ℕ⦄ (a : A n), P a
+  variable {f}
+  definition tmseq_carrier [reducible] {P : depseq_carrier A} (g : depseq_diagram f P) : Type :=
+  forall ⦃n : ℕ⦄ (a : A n), P a
 
-  definition tmseq_diagram {P : depseq_carrier} {g : depseq_diagram f P} (t : @tmseq_carrier _ _ _ g) : Type :=
-    forall ⦃n : ℕ⦄ (a : A n), g (t a) = t (f a)
+  definition tmseq_diagram [reducible] {P : depseq_carrier A} {g : depseq_diagram f P}
+    (t : tmseq_carrier g) : Type :=
+  forall ⦃n : ℕ⦄ (a : A n), g (t a) = t (f a)
 
-  definition wkseq_carrier (B : ℕ → Type) (g : @seq_diagram B) : @depseq_carrier A :=
-    λ n a, B n
+  definition wkseq_carrier (B : ℕ → Type) (g : seq_diagram B) : depseq_carrier A :=
+  λ n a, B n
 
-  definition wkseq_diagram (B : ℕ → Type) (g : @seq_diagram B) : @depseq_diagram A f (wkseq_carrier B g) :=
-    λ n a, (@g n)
+  definition wkseq_diagram (B : ℕ → Type) (g : seq_diagram B) :
+    depseq_diagram f (wkseq_carrier B g) :=
+  λ n a, (@g n)
 
   end dependent_sequences
 
   protected abbreviation Mk [constructor] := Seq_diagram.mk
   attribute Seq_diagram.carrier [coercion]
-  attribute Seq_diagram.struct [instance] [priority 10000] [coercion]
+  attribute Seq_diagram.struct [coercion]
 
-  variables {A : ℕ → Type} [f : seq_diagram A]
+  variables {A : ℕ → Type} (f : seq_diagram A)
   include f
 
-  definition rep0 [reducible] (k : ℕ) : A 0 → A k :=
-  begin
-    intro a,
-    induction k with k x,
-    exact a,
-    exact f x
-  end
+  -- definition rep0 [reducible] (k : ℕ) : A 0 → A k :=
+  -- begin
+  --   intro a,
+  --   induction k with k x,
+  --   exact a,
+  --   exact f x
+  -- end
 
-  definition  rep0_equiseq_back [H : is_equiseq f] (k : ℕ) : A k → A 0 :=
-  begin
-    induction k with k IH: intro a,
-    exact a,
-    exact (IH ((@f k)⁻¹ a)),
-  end
+  -- definition  rep0_equiseq_back [H : is_equiseq f] (k : ℕ) : A k → A 0 :=
+  -- begin
+  --   induction k with k IH: intro a,
+  --   exact a,
+  --   exact (IH ((@f k)⁻¹ a)),
+  -- end
 
-  definition rep0_equiseq_is_equiv [instance] [H : is_equiseq f] (k : ℕ) : is_equiv (@rep0 A f k) :=
-  begin
-    fapply adjointify,
-    exact (rep0_equiseq_back k),
-    induction k with k IH: intro b,
-    exact rfl,
-    unfold rep0,
-    unfold rep0_equiseq_back,
-    fold [rep0 k (rep0_equiseq_back k ((@f k)⁻¹ b))],
-    refine _ ⬝ _,
-    exact (@f k) ((@f k)⁻¹ b),
-    exact (ap (@f k) (IH ((@f k)⁻¹ b))),
-    apply right_inv (@f _),
-    induction k with k IH: intro b,
-    exact rfl,
-    unfold rep0_equiseq_back,
-    unfold rep0,
-    fold [rep0 k b],
-    refine _ ⬝ _,
-    exact (rep0_equiseq_back k (rep0 k b)),
-    exact (ap (rep0_equiseq_back k) (@left_inv _ _ (@f k) _ (rep0 k b))),
-    exact IH b,
-  end
+  -- definition rep0_equiseq_is_equiv [instance] [H : is_equiseq f] (k : ℕ) : is_equiv (@rep0 A f k) :=
+  -- begin
+  --   fapply adjointify,
+  --   exact (rep0_equiseq_back f k),
+  --   induction k with k IH: intro b,
+  --   exact rfl,
+  --   unfold rep0,
+  --   unfold rep0_equiseq_back,
+  --   fold [rep0 _ k (rep0_equiseq_back _ k ((@f k)⁻¹ b))],
+  --   refine _ ⬝ _,
+  --   exact (@f k) ((@f k)⁻¹ b),
+  --   exact (ap (@f k) (IH ((@f k)⁻¹ b))),
+  --   apply right_inv (@f _),
+  --   induction k with k IH: intro b,
+  --   exact rfl,
+  --   unfold rep0_equiseq_back,
+  --   unfold rep0,
+  --   fold [rep0 k b],
+  --   refine _ ⬝ _,
+  --   exact (rep0_equiseq_back k (rep0 k b)),
+  --   exact (ap (rep0_equiseq_back k) (@left_inv _ _ (@f k) _ (rep0 k b))),
+  --   exact IH b,
+  -- end
 
   section generalized_rep
   variable {n : ℕ}
@@ -106,7 +110,7 @@ namespace seq_colim
   definition rep [reducible] (k : ℕ) (a : A n) : A (n + k) :=
   by induction k with k x;exact a;exact f x
 
-  definition rep_f (k : ℕ) (a : A n) : rep k (f a) =[succ_add n k] rep (succ k) a :=
+  definition rep_f (k : ℕ) (a : A n) : rep f k (f a) =[succ_add n k] rep f (succ k) a :=
   begin
     induction k with k IH,
     { constructor},
@@ -120,7 +124,8 @@ namespace seq_colim
     exact g ((@f (n + k))⁻¹ a),
   end
 
-  definition rep_equiseq_is_equiv [instance] [H : is_equiseq f] (k : ℕ) : is_equiv (λ (a : A n), rep k a) :=
+  definition rep_equiseq_is_equiv [instance] [H : is_equiseq f] (k : ℕ) :
+  is_equiv (λ (a : A n), rep f k a) :=
   begin
     fapply adjointify,
     exact (λ (a : A (n + k)), rep_equiseq_back k a),
