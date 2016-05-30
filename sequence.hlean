@@ -9,7 +9,6 @@ import types.nat .move_to_lib
 open nat eq equiv sigma sigma.ops is_equiv
 
 namespace seq_colim
--- Type sequences are basically presheaves on ⟨ℕ,≤⟩. They form a model of type theory, so we define not only type sequences, but also dependent type sequences and terms thereof.
 
   definition seq_diagram [reducible] (A : ℕ → Type) : Type := Π⦃n⦄, A n → A (succ n)
 
@@ -25,39 +24,6 @@ namespace seq_colim
     (maps : seq_diagram carrier)
     (prop : is_equiseq maps)
 
-  definition is_equiv_of_equiseq {A : ℕ → Type} (f : seq_diagram A) [H : is_equiseq f] :
-    forall (n : ℕ), is_equiv (@f n) :=
-  H
-
-  section dependent_sequences
-
-  variable (A : ℕ → Type)
-  variable (f : seq_diagram A)
-
-  definition depseq_carrier [reducible] : Type :=
-  forall ⦃n : ℕ⦄, A n → Type
-
-  variable {A}
-  definition depseq_diagram [reducible] (P : depseq_carrier A) : Type :=
-  forall ⦃n : ℕ⦄ ⦃a : A n⦄, P a → P (f a)
-
-  variable {f}
-  definition tmseq_carrier [reducible] {P : depseq_carrier A} (g : depseq_diagram f P) : Type :=
-  forall ⦃n : ℕ⦄ (a : A n), P a
-
-  definition tmseq_diagram [reducible] {P : depseq_carrier A} {g : depseq_diagram f P}
-    (t : tmseq_carrier g) : Type :=
-  forall ⦃n : ℕ⦄ (a : A n), g (t a) = t (f a)
-
-  definition wkseq_carrier (B : ℕ → Type) (g : seq_diagram B) : depseq_carrier A :=
-  λ n a, B n
-
-  definition wkseq_diagram (B : ℕ → Type) (g : seq_diagram B) :
-    depseq_diagram f (wkseq_carrier B g) :=
-  λ n a, (@g n)
-
-  end dependent_sequences
-
   protected abbreviation Mk [constructor] := Seq_diagram.mk
   attribute Seq_diagram.carrier [coercion]
   attribute Seq_diagram.struct [coercion]
@@ -65,50 +31,47 @@ namespace seq_colim
   variables {A : ℕ → Type} (f : seq_diagram A)
   include f
 
-  -- definition rep0 [reducible] (k : ℕ) : A 0 → A k :=
-  -- begin
-  --   intro a,
-  --   induction k with k x,
-  --   exact a,
-  --   exact f x
-  -- end
+  definition rep0 [reducible] (k : ℕ) : A 0 → A k :=
+  begin
+    intro a,
+    induction k with k x,
+    exact a,
+    exact f x
+  end
 
-  -- definition  rep0_equiseq_back [H : is_equiseq f] (k : ℕ) : A k → A 0 :=
-  -- begin
-  --   induction k with k IH: intro a,
-  --   exact a,
-  --   exact (IH ((@f k)⁻¹ a)),
-  -- end
+  definition  rep0_back [H : is_equiseq f] (k : ℕ) : A k → A 0 :=
+  begin
+    induction k with k IH: intro a,
+    exact a,
+    exact (IH ((@f k)⁻¹ a)),
+  end
 
-  -- definition rep0_equiseq_is_equiv [instance] [H : is_equiseq f] (k : ℕ) : is_equiv (@rep0 A f k) :=
-  -- begin
-  --   fapply adjointify,
-  --   exact (rep0_equiseq_back f k),
-  --   induction k with k IH: intro b,
-  --   exact rfl,
-  --   unfold rep0,
-  --   unfold rep0_equiseq_back,
-  --   fold [rep0 _ k (rep0_equiseq_back _ k ((@f k)⁻¹ b))],
-  --   refine _ ⬝ _,
-  --   exact (@f k) ((@f k)⁻¹ b),
-  --   exact (ap (@f k) (IH ((@f k)⁻¹ b))),
-  --   apply right_inv (@f _),
-  --   induction k with k IH: intro b,
-  --   exact rfl,
-  --   unfold rep0_equiseq_back,
-  --   unfold rep0,
-  --   fold [rep0 k b],
-  --   refine _ ⬝ _,
-  --   exact (rep0_equiseq_back k (rep0 k b)),
-  --   exact (ap (rep0_equiseq_back k) (@left_inv _ _ (@f k) _ (rep0 k b))),
-  --   exact IH b,
-  -- end
+  definition is_equiv_rep0 [constructor] [H : is_equiseq f] (k : ℕ) :
+    is_equiv (rep0 f k) :=
+  begin
+    fapply adjointify,
+    { exact rep0_back f k},
+    { induction k with k IH: intro b,
+      { reflexivity},
+      unfold rep0,
+      unfold rep0_back,
+      fold [rep0 f k (rep0_back f k ((@f k)⁻¹ b))],
+      refine ap (@f k) (IH ((@f k)⁻¹ b)) ⬝ _,
+      apply right_inv (@f k)},
+    induction k with k IH: intro b,
+    exact rfl,
+    unfold rep0_back,
+    unfold rep0,
+    fold [rep0 f k b],
+    refine _ ⬝ IH b,
+    exact ap (rep0_back f k) (left_inv (@f k) (rep0 f k b))
+  end
 
   section generalized_rep
   variable {n : ℕ}
 
   definition rep [reducible] (k : ℕ) (a : A n) : A (n + k) :=
-  by induction k with k x;exact a;exact f x
+  by induction k with k x; exact a; exact f x
 
   definition rep_f (k : ℕ) (a : A n) : rep f k (f a) =[succ_add n k] rep f (succ k) a :=
   begin
@@ -117,75 +80,70 @@ namespace seq_colim
     { apply pathover_ap, exact apo f IH}
   end
 
-  definition  rep_equiseq_back [H : is_equiseq f] (k : ℕ) (a : A (n + k)) : A n :=
+  definition  rep_back [H : is_equiseq f] (k : ℕ) (a : A (n + k)) : A n :=
   begin
     induction k with k g,
     exact a,
     exact g ((@f (n + k))⁻¹ a),
   end
 
-  definition rep_equiseq_is_equiv [instance] [H : is_equiseq f] (k : ℕ) :
-  is_equiv (λ (a : A n), rep f k a) :=
+  definition is_equiv_rep [constructor] [H : is_equiseq f] (k : ℕ) :
+    is_equiv (λ (a : A n), rep f k a) :=
   begin
     fapply adjointify,
-    exact (λ (a : A (n + k)), rep_equiseq_back k a),
+    { exact rep_back f k},
+    { induction k with k IH: intro b,
+      { reflexivity},
+      unfold rep,
+      unfold rep_back,
+      fold [rep f k (rep_back f k ((@f (n+k))⁻¹ b))],
+      refine ap (@f (n+k)) (IH ((@f (n+k))⁻¹ b)) ⬝ _,
+      apply right_inv (@f (n+k))},
     induction k with k IH: intro b,
     exact rfl,
+    unfold rep_back,
     unfold rep,
-    unfold rep_equiseq_back,
-    fold [rep k (rep_equiseq_back k ((@f (n+k))⁻¹ b))],
-    refine _ ⬝ _,
-    exact (@f (n+k)) ((@f (n+k))⁻¹ b),
-    exact (ap (@f (n+k)) (IH ((@f (n+k))⁻¹ b))),
-    apply right_inv (@f _),
-    induction k with k IH: intro b,
-    exact rfl,
-    unfold rep_equiseq_back,
-    unfold rep,
-    fold [rep k b],
-    refine _ ⬝ _,
-    exact (rep_equiseq_back k (rep k b)),
-    exact (ap (rep_equiseq_back k) (@left_inv _ _ (@f (n+k)) _ (rep k b))),
-    exact IH b,
+    fold [rep f k b],
+    refine _ ⬝ IH b,
+    exact ap (rep_back f k) (left_inv (@f (n+k)) (rep f k b))
   end
 
-  definition rep_rep (k l : ℕ) (a : A n) : rep k (rep l a) =[nat.add_add n l k] rep (k + l) a :=
+  definition rep_rep (k l : ℕ) (a : A n) :
+    rep f k (rep f l a) =[nat.add_add n l k] rep f (k + l) a :=
   begin
     induction l with l IH,
     { esimp [rep, nat.add_add, add], constructor},
-    { rewrite [▸rep k (f (rep l a)) =[ succ_add (n + l) k ⬝ ap succ (nat.add_add n l k)]
-                f (rep (k + l) a)],
-      refine rep_f k (rep l a) ⬝o _,
-      rewrite [▸f (rep k (rep l a)) =[ ap succ (nat.add_add n l k) ] f (rep (k + l) a)],
+    { rewrite [▸rep f k (f (rep f l a)) =[ succ_add (n + l) k ⬝ ap succ (nat.add_add n l k)]
+                f (rep f (k + l) a)],
+      refine rep_f f k (rep f l a) ⬝o _,
+      rewrite [▸f (rep f k (rep f l a)) =[ ap succ (nat.add_add n l k) ] f (rep f (k + l) a)],
       apply pathover_ap, exact apo f IH}
   end
 
-  definition f_rep (k : ℕ) (a : A n) : f (rep k a) = rep (succ k) a := idp
+  definition f_rep (k : ℕ) (a : A n) : f (rep f k a) = rep f (succ k) a := idp
   end generalized_rep
 
   section shift
-  variable (A)
-  definition shift_diag [instance] [unfold_full] : seq_diagram (λn, A (succ n)) :=
+
+  definition shift_diag [unfold_full] : seq_diagram (λn, A (succ n)) :=
   λn a, f a
 
-  definition kshift_diag [instance] [unfold_full] [priority 800] (k : ℕ)
-    : seq_diagram (λn, A (k + n)) :=
+  definition kshift_diag [unfold_full] (k : ℕ) : seq_diagram (λn, A (k + n)) :=
   λn a, f a
 
-  definition kshift_diag' [instance] [unfold_full] [priority 800] (k : ℕ)
-    : seq_diagram (λn, A (n + k)) :=
-  λn a, !succ_add⁻¹ ▸ f a
+  definition kshift_diag' [unfold_full] (k : ℕ) : seq_diagram (λn, A (n + k)) :=
+  λn a, transport A (succ_add n k)⁻¹ (f a)
   end shift
 
   section constructions
 
     omit f
 
-    definition constant_seq [instance] (X : Type) :
+    definition constant_seq (X : Type) :
       seq_diagram (λ n, X) :=
       λ n x, x
 
-    definition arrow_left_diag [instance] [unfold_full] (X : Type) :
+    definition arrow_left_diag [unfold_full] (X : Type) :
       seq_diagram (λn, X → A n) :=
       λn g x, f (g x)
 
@@ -196,16 +154,16 @@ namespace seq_colim
     definition seq_finset : seq_diagram finset := finset.fin
 
     definition id0_seq (x y : A 0) : ℕ → Type :=
-      λ n, (@rep0 _ f n x) = (rep0 n y)
+    λ k, rep0 f k x = rep0 f k y
 
-    definition id0_seq_diagram (x y : A 0) : seq_diagram (@id0_seq A f x y) :=
-      λ (n : ℕ), @ap _ _ (@f n) (rep0 n x) (rep0 n y)
+    definition id0_seq_diagram (x y : A 0) : seq_diagram (id0_seq f x y) :=
+    λ (k : ℕ) (p : rep0 f k x = rep0 f k y), ap (@f k) p
 
     definition id_seq (n : ℕ) (x y : A n) : ℕ → Type :=
-      λ k, (@rep _ f n k x) = (rep k y)
+    λ k, rep f k x = rep f k y
 
-    definition id_seq_diagram (n : ℕ) (x y : A n) : seq_diagram (@id_seq _ f n x y) :=
-      λ (k : ℕ), @ap _ _ (@f (n + k)) (rep k x) (rep k y)
+    definition id_seq_diagram (n : ℕ) (x y : A n) : seq_diagram (id_seq f n x y) :=
+    λ (k : ℕ) (p : rep f k x = rep f k y), ap (@f (n + k)) p
 
   end constructions
 
@@ -214,61 +172,28 @@ namespace seq_colim
     variable {A}
     variable (P : Π⦃n⦄, A n → Type)
 
-    definition seq_diagram_over [class] : Type := Π⦃n⦄ {a : A n}, P a → P (f a)
+    definition seq_diagram_over : Type := Π⦃n⦄ {a : A n}, P a → P (f a)
 
-    variable [g : seq_diagram_over P]
-    include g
-    definition seq_diagram_of_over [instance] [unfold_full] {n : ℕ} (a : A n) :
-      seq_diagram (λk, P (rep k a)) :=
-      λk p, g p
+    variable (g : seq_diagram_over f P)
+    variables {f P}
 
-    definition seq_diagram_sigma [instance] : seq_diagram (λn, Σ(x : A n), P x) :=
-      λn v, ⟨f v.1, g v.2⟩
+    definition seq_diagram_of_over [unfold_full] {n : ℕ} (a : A n) :
+      seq_diagram (λk, P (rep f k a)) :=
+    λk p, g p
 
-    variable {n : ℕ}
+    definition seq_diagram_sigma : seq_diagram (λn, Σ(x : A n), P x) :=
+    λn v, ⟨f v.1, g v.2⟩
 
-    theorem rep_f_equiv [constructor] (a : A n) (k : ℕ) :
-      P (rep (succ k) a) ≃ P (rep k (f a)) :=
-      equiv_of_eq (apo011 P _ (rep_f k a)⁻¹ᵒ)
+    variables {n : ℕ} (f P)
+
+    theorem rep_f_equiv [constructor] (a : A n) (k : ℕ) : P (rep f (succ k) a) ≃ P (rep f k (f a)) :=
+    equiv_of_eq (apo011 P _ (rep_f f k a)⁻¹ᵒ)
 
     theorem rep_rep_equiv [constructor] (a : A n) (k l : ℕ) :
-      P (rep (k + l) a) ≃ P (rep k (rep l a)) :=
-      equiv_of_eq (apo011 P _ (rep_rep k l a)⁻¹ᵒ)
+      P (rep f (k + l) a) ≃ P (rep f k (rep f l a)) :=
+    equiv_of_eq (apo011 P _ (rep_rep f k l a)⁻¹ᵒ)
 
   end over
 
-  section sequential_transformations
-  /-
-    We define the notion of sequential transformation into the type sequence ⟨A,f⟩,
-    which is basically a natural transformation of presheaves on ⟨ℕ,≤⟩.
-    Another way of looking at sequential transformations is that a sequential transformation from
-    ⟨B,g⟩ to ⟨A,f⟩ is a term of the dependent type sequence "⟨A,f⟩ weakened by ⟨B,g⟩" over ⟨B,g⟩.
-    A sequential transformation is an equivalence if all its components are.
-    We give some very simple examples of sequential transformations,
-    including rep0 and the natural map to the shifted sequence.
-  -/
-    definition seq_trans_carrier {B : ℕ → Type} (g : seq_diagram B) : Type :=
-      forall (n : ℕ), B n → A n
-
-    definition seq_trans_natural [class] {B : ℕ → Type} (g : seq_diagram B)
-      (t : @seq_trans_carrier A f B g) : Type :=
-    forall (n : ℕ) (b : B n), f (t n b) = t (succ n) (g b)
-
-    definition seq_trans_isequiv {B : ℕ → Type} (g : seq_diagram B)
-      (t : @seq_trans_carrier _ f _ g) (H : @seq_trans_natural _ _ _ _ t) : Type :=
-    forall ⦃n : ℕ⦄, is_equiv (t n)
-
-    definition rep0_into : seq_trans_natural (constant_seq (A 0)) rep0 :=
-      begin
-      unfold seq_trans_natural,
-      intros n a,
-      unfold rep0,
-      end
-
-    definition rep0_into_equiseq_isequiv (H : is_equiseq f)
-      : seq_trans_isequiv (constant_seq (A 0)) rep0 rep0_into :=
-    rep0_equiseq_is_equiv
-
-  end sequential_transformations
 
 end seq_colim
