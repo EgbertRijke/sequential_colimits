@@ -275,6 +275,35 @@ namespace seq_colim
 
   end functor
 
+  definition seq_colim_constant_seq (X : Type) : seq_colim (constant_seq X) ≃ X :=
+  (equiv.mk _ (equiseq_colim_equiv _ (λn, !is_equiv_id)))⁻¹ᵉ
+
+  definition is_contr_seq_colim {A : ℕ → Type} (f : seq_diagram A)
+    [Πk, is_contr (A k)] : is_contr (seq_colim f) :=
+  begin
+    apply @is_trunc_is_equiv_closed (A 0),
+    apply equiseq_colim_equiv, intro n, apply is_equiv_of_is_contr
+  end
+
+  -- definition is_prop_seq_colim {A : ℕ → Type} (f : seq_diagram A)
+  --   [Πk, is_prop (A k)] : is_prop (seq_colim f) :=
+  -- begin
+  --   apply is_prop.mk,
+  --   intro x,
+  --   induction x using seq_colim.rec_prop with n a n a,
+  -- end
+
+  -- definition is_trunc_seq_colim (n : ℕ₋₂) {A : ℕ → Type} (f : seq_diagram A)
+  --   [Πk, is_trunc n (A k)] : is_trunc n (seq_colim f) :=
+  -- begin
+  --   induction n with n IH,
+  --   { fapply is_contr.mk,
+  --     { exact ι' f 0 !center},
+  --     { },
+  --   { }
+  -- end
+
+
   /- colimits of dependent sequences, sigma's commute with colimits -/
 
   section over
@@ -287,11 +316,10 @@ namespace seq_colim
     cast (apo011 P (succ_add n (succ k)) (rep_f f (succ k) a)) (g p) =
     g (cast (apo011 P (succ_add n k) (rep_f f k a)) p) :=
   begin
-    rewrite [+my.cast_apo011],
+    refine !my.cast_apo011 ⬝ _ ⬝ ap (@g _ _) !my.cast_apo011⁻¹,
     refine _ ⬝ (my.fn_tro_eq_tro_fn (rep_f f k a) g p)⁻¹,
-    rewrite [↑rep_f,↓rep_f f k a],
     refine !my.pathover_ap_tro ⬝ _,
-    rewrite [my.apo_tro]
+    apply my.apo_tro
   end
 
   variable (a)
@@ -489,28 +517,14 @@ namespace seq_colim
       induction x with k p k p,
       { esimp, exact colim_sigma_of_sigma_colim_path1 g p},
       { esimp, apply eq_pathover,
-        refine _ ⬝hp !elim_glue⁻¹,
+        refine !elim_glue ⬝ph _,
         xrewrite [ap_compose' (colim_sigma_of_sigma_colim_constructor g),
-                  ap_compose' (seq_colim_functor _ _)],
-        refine ap02 _ (ap02 _ !elim_glue) ⬝ph _,
-        refine ap02 _ !elim_glue ⬝ph _,
-        rewrite [ap_con],
-        refine whisker_left _ !elim_glue ⬝ph _, rewrite [-ap_compose', ▸*],
--- remove the following "change": it just replaces transport by cast
---         change
--- square (colim_sigma_of_sigma_colim_path1 g (g p))
---        (colim_sigma_of_sigma_colim_path1 g p)
---        (ap (λx, ι (seq_diagram_sigma g) ⟨rep f (succ k) (f a), x⟩) (rep_f_equiv_natural g (g p)) ⬝
---          glue (seq_diagram_sigma g)
---               ⟨rep f k (f a), cast (apo011 P (succ_add n k) (rep_f f k a))⁻¹ (g p)⟩)
---        (glue (seq_diagram_sigma g) ⟨rep f k a, p⟩),
-       --    esimp,
-       unfold [colim_sigma_of_sigma_colim_path1],
-       apply move_top_of_right,
-       apply whisker_br,
---       fold [rep f (succ k) (f a)],
-
-}}
+                  ap_compose' (shift_down _)],
+        refine _ ⬝hp ap02 _ (ap02 _ !elim_glue⁻¹),
+        rewrite [ap_con, ap_con],
+        refine _ ⬝hp whisker_left _ (ap02 _ !elim_glue⁻¹),
+        refine _ ⬝hp whisker_left _ !elim_glue⁻¹,
+        exact sorry}}
   end
 
   variable (P)

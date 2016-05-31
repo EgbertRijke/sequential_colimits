@@ -4,7 +4,7 @@ Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Floris van Doorn, Egbert Rijke
 -/
 
-import types.nat .move_to_lib
+import types.nat .move_to_lib types.fin
 
 open nat eq equiv sigma sigma.ops is_equiv
 
@@ -139,19 +139,18 @@ namespace seq_colim
 
     omit f
 
-    definition constant_seq (X : Type) :
-      seq_diagram (λ n, X) :=
-      λ n x, x
+    definition constant_seq (X : Type) : seq_diagram (λ n, X) :=
+    λ n x, x
 
-    definition arrow_left_diag [unfold_full] (X : Type) :
-      seq_diagram (λn, X → A n) :=
-      λn g x, f (g x)
+    definition seq_diagram_arrow_left [unfold_full] (X : Type) : seq_diagram (λn, X → A n) :=
+    λn g x, f (g x)
 
-    inductive finset : ℕ → Type :=
-      | fin : forall n, finset n → finset (succ n)
-      | ftop : forall n, finset (succ n)
+    -- inductive finset : ℕ → Type :=
+    -- | fin : forall n, finset n → finset (succ n)
+    -- | ftop : forall n, finset (succ n)
 
-    definition seq_finset : seq_diagram finset := finset.fin
+    definition seq_diagram_fin : seq_diagram fin :=
+    λn, fin.lift_succ
 
     definition id0_seq (x y : A 0) : ℕ → Type :=
     λ k, rep0 f k x = rep0 f k y
@@ -196,5 +195,10 @@ namespace seq_colim
 
   end over
 
+  omit f
+  -- do we need to generalize this to the case where the bottom sequence consists of equivalences?
+  definition seq_diagram_pi {X : Type} {A : X → ℕ → Type} (g : Π⦃x n⦄, A x n → A x (succ n)) :
+    seq_diagram (λn, Πx, A x n) :=
+  λn f x, g (f x)
 
 end seq_colim
