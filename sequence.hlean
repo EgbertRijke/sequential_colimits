@@ -187,7 +187,7 @@ namespace seq_colim
     variables {n : ℕ} (f P)
 
     theorem rep_f_equiv [constructor] (a : A n) (k : ℕ) : P (rep f (succ k) a) ≃ P (rep f k (f a)) :=
-    equiv_of_eq (apo011 P _ (rep_f f k a)⁻¹ᵒ)
+    (equiv_of_eq (apo011 P (succ_add n k) (rep_f f k a)))⁻¹ᵉ
 
     theorem rep_rep_equiv [constructor] (a : A n) (k l : ℕ) :
       P (rep f (k + l) a) ≃ P (rep f k (rep f l a)) :=
