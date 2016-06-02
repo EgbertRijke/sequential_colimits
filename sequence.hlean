@@ -8,6 +8,9 @@ import types.nat .move_to_lib types.fin
 
 open nat eq equiv sigma sigma.ops is_equiv
 
+  -- MOVE
+
+
 namespace seq_colim
 
   definition seq_diagram [reducible] (A : ℕ → Type) : Type := Π⦃n⦄, A n → A (succ n)
@@ -77,7 +80,7 @@ namespace seq_colim
   begin
     induction k with k IH,
     { constructor},
-    { apply pathover_ap, exact apo f IH}
+    { unfold [succ_add], apply pathover_ap, exact apo f IH}
   end
 
   definition  rep_back [H : is_equiseq f] (k : ℕ) (a : A (n + k)) : A n :=
@@ -187,11 +190,11 @@ namespace seq_colim
 
     theorem rep_f_equiv [constructor] (a : A n) (k : ℕ) :
       P (rep f k (f a)) ≃ P (rep f (succ k) a) :=
-    equiv_of_eq (apo011 P (succ_add n k) (rep_f f k a))
+    my.equiv_apd011 P (rep_f f k a)
 
     theorem rep_rep_equiv [constructor] (a : A n) (k l : ℕ) :
       P (rep f (k + l) a) ≃ P (rep f k (rep f l a)) :=
-    equiv_of_eq (apo011 P _ (rep_rep f k l a)⁻¹ᵒ)
+    (my.equiv_apd011 P (rep_rep f k l a))⁻¹ᵉ
 
   end over
 

@@ -5,7 +5,7 @@ Authors: Floris van Doorn, Egbert Rijke
 -/
 import hit.colimit .sequence cubical.squareover types.arrow .move_to_lib types.equiv
 
-open eq nat sigma sigma.ops quotient equiv pi is_trunc is_equiv fiber
+open eq nat sigma sigma.ops quotient equiv pi is_trunc is_equiv fiber function
 
 namespace seq_colim
 
@@ -84,19 +84,19 @@ namespace seq_colim
   --   { exact glue a}
   -- end
 
-  definition kshift_up' (k : ℕ) (x : seq_colim f) : seq_colim (kshift_diag' f k) :=
-  begin
-    induction x,
-    { apply ι' _ n, exact rep f k a},
-    { exact sorry}
-  end
+  -- definition kshift_up' (k : ℕ) (x : seq_colim f) : seq_colim (kshift_diag' f k) :=
+  -- begin
+  --   induction x,
+  --   { apply ι' _ n, exact rep f k a},
+  --   { exact sorry}
+  -- end
 
-  definition kshift_down' (k : ℕ) (x : seq_colim (kshift_diag' f k)) : seq_colim f :=
-  begin
-    induction x,
-    { exact ι f a},
-    { esimp, exact sorry}
-  end
+  -- definition kshift_down' (k : ℕ) (x : seq_colim (kshift_diag' f k)) : seq_colim f :=
+  -- begin
+  --   induction x,
+  --   { exact ι f a},
+  --   { esimp, exact sorry}
+  -- end
 
   end
 
@@ -144,27 +144,27 @@ namespace seq_colim
   --            --   apply square_of_eq, apply whisker_right, exact !elim_glue⁻¹}
   --          end end
 
-  definition kshift_equiv' [constructor] (k : ℕ) : seq_colim f ≃ seq_colim (kshift_diag' f k) :=
-  equiv.MK (kshift_up' f k)
-           (kshift_down' f k)
-           abstract begin
-             intro a, exact sorry,
-             -- induction a,
-             -- { esimp, exact glue a},
-             -- { apply eq_pathover,
-             --   rewrite [▸*, ap_id, ap_compose shift_up shift_down, ↑shift_down,
-             --            @elim_glue (λk, A (succ k)) _, ↑shift_up],
-             --   apply square_of_eq, apply whisker_right, exact !elim_glue⁻¹}
-           end end
-           abstract begin
-             intro a, exact sorry
-             -- induction a,
-             -- { exact glue a},
-             -- { apply eq_pathover,
-             --   rewrite [▸*, ap_id, ap_compose shift_down shift_up, ↑shift_up,
-             --            @elim_glue A _, ↑shift_down],
-             --   apply square_of_eq, apply whisker_right, exact !elim_glue⁻¹}
-           end end
+  -- definition kshift_equiv' [constructor] (k : ℕ) : seq_colim f ≃ seq_colim (kshift_diag' f k) :=
+  -- equiv.MK (kshift_up' f k)
+  --          (kshift_down' f k)
+  --          abstract begin
+  --            intro a, exact sorry,
+  --            -- induction a,
+  --            -- { esimp, exact glue a},
+  --            -- { apply eq_pathover,
+  --            --   rewrite [▸*, ap_id, ap_compose shift_up shift_down, ↑shift_down,
+  --            --            @elim_glue (λk, A (succ k)) _, ↑shift_up],
+  --            --   apply square_of_eq, apply whisker_right, exact !elim_glue⁻¹}
+  --          end end
+  --          abstract begin
+  --            intro a, exact sorry
+  --            -- induction a,
+  --            -- { exact glue a},
+  --            -- { apply eq_pathover,
+  --            --   rewrite [▸*, ap_id, ap_compose shift_down shift_up, ↑shift_up,
+  --            --            @elim_glue A _, ↑shift_down],
+  --            --   apply square_of_eq, apply whisker_right, exact !elim_glue⁻¹}
+  --          end end
 
   variable {A}
 
@@ -313,14 +313,8 @@ namespace seq_colim
   variables {P : Π⦃n⦄, A n → Type.{v}} (g : seq_diagram_over f P) {n : ℕ} {a : A n}
 
   definition rep_f_equiv_natural {k : ℕ} (p : P (rep f k (f a))) :
-    cast (apo011 P (succ_add n (succ k)) (rep_f f (succ k) a)) (g p) =
-    g (cast (apo011 P (succ_add n k) (rep_f f k a)) p) :=
-  begin
-    refine !my.cast_apo011 ⬝ _ ⬝ ap (@g _ _) !my.cast_apo011⁻¹,
-    refine _ ⬝ (my.fn_tro_eq_tro_fn (rep_f f k a) g p)⁻¹,
-    refine !my.pathover_ap_tro ⬝ _,
-    apply my.apo_tro
-  end
+    transporto P (rep_f f (succ k) a) (g p) = g (transporto P (rep_f f k a) p) :=
+  (my.fn_tro_eq_tro_fn2 (rep_f f k a) g p)⁻¹
 
   variable (a)
   definition over_f_equiv [constructor] :
@@ -484,13 +478,21 @@ namespace seq_colim
     apply tr_pathover
   end
 
+  -- definition colim_sigma_of_sigma_colim_path1 {k : ℕ} (p : P (rep f k (f a))) :
+  --   ι (seq_diagram_sigma g) ⟨rep f k (f a), p⟩ =
+  --   ι (seq_diagram_sigma g) ⟨rep f (succ k) a, transporto P (rep_f f k a) p⟩ :=
+  -- begin
+  --   fapply apo011 (ι' (seq_diagram_sigma g)) (succ_add n k),
+  --   apply sigma_pathover _ _ _ (rep_f f k a), esimp,
+  --   exact !pathover_tro
+  -- end
+
   definition colim_sigma_of_sigma_colim_path1 {k : ℕ} (p : P (rep f k (f a))) :
     ι (seq_diagram_sigma g) ⟨rep f k (f a), p⟩ =
-    ι (seq_diagram_sigma g) ⟨rep f (succ k) a, cast (apo011 P (succ_add n k) (rep_f f k a)) p⟩ :=
+    ι (seq_diagram_sigma g) ⟨rep f (succ k) a, transporto P (rep_f f k a) p⟩ :=
   begin
-    fapply apo011 (ι' (seq_diagram_sigma g)) (succ_add n k),
-    apply sigma_pathover _ _ _ (rep_f f k a), esimp,
-    apply pathover_tr
+    apply apo0111 (λn a p, ι' (seq_diagram_sigma g) n ⟨a, p⟩) (succ_add n k) (rep_f f k a),
+    apply my.pathover_tro
   end
 
 
@@ -505,26 +507,28 @@ namespace seq_colim
   --   square (apo011 f (p x) (q x)) (apo011 f (p y) (q y)) (_) (_) :=
   -- _
 
-
+  --set_option pp.notation false
   definition colim_sigma_of_sigma_colim (v : Σ(x : seq_colim f), seq_colim_over g x)
     : seq_colim (seq_diagram_sigma g) :=
   begin
     induction v with x p,
     induction x with n a n a,
     { exact colim_sigma_of_sigma_colim_constructor g p},
-    { esimp, apply arrow_pathover_constant_right, intro x, esimp at x,
-      rewrite seq_colim_over_glue,
-      induction x with k p k p,
-      { esimp, exact colim_sigma_of_sigma_colim_path1 g p},
-      { esimp, apply eq_pathover,
-        refine !elim_glue ⬝ph _,
-        xrewrite [ap_compose' (colim_sigma_of_sigma_colim_constructor g),
-                  ap_compose' (shift_down _)],
-        refine _ ⬝hp ap02 _ (ap02 _ !elim_glue⁻¹),
-        rewrite [ap_con, ap_con],
-        refine _ ⬝hp whisker_left _ (ap02 _ !elim_glue⁻¹),
-        refine _ ⬝hp whisker_left _ !elim_glue⁻¹,
-        exact sorry}}
+    esimp, apply arrow_pathover_constant_right, intro x, esimp at x,
+    rewrite seq_colim_over_glue,
+    induction x with k p k p,
+    { esimp, exact colim_sigma_of_sigma_colim_path1 g p},
+    esimp, apply eq_pathover,
+    refine !elim_glue ⬝ph _,
+    refine _ ⬝hp (ap_compose' (colim_sigma_of_sigma_colim_constructor g ∘ shift_down _) _ _)⁻¹,
+    refine _ ⬝hp ap02 _ !elim_glue⁻¹,
+    refine _ ⬝hp !ap_con⁻¹,
+    refine _ ⬝hp (!ap_compose' ◾ (ap_compose _ _ _)⁻¹),
+    refine _ ⬝hp whisker_left _ (ap02 _ !elim_glue⁻¹),
+    refine _ ⬝hp whisker_left _ !elim_glue⁻¹,
+    refine _ ⬝pv whisker_rt _ !my.natural_square0111,
+    refine _ ⬝ whisker_left _ (ap02 _ !inv_inv⁻¹ ⬝ !ap_inv),
+    symmetry, apply my.apo0111_precompose
   end
 
   variable (P)
@@ -552,7 +556,9 @@ namespace seq_colim
 
   end over
 
-  /- ATTEMPT 4: try to prove the equivalence by mimicing the flattening lemma proof -/
+  /- ATTEMPT 4: try to prove the equivalence by proving the induction principle and computation rules
+     of the colimit-of-sigma's for the sigma-of-colimits. This is the same technique used
+     in the proof for the flattening lemma -/
 
 
   -- namespace sigma_colim
