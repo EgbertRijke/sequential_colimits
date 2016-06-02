@@ -409,8 +409,8 @@ namespace seq_colim
     pathover (seq_colim_over g) (ιo g (g p)) (glue f a) (ι' _ 1 (g p)) :=
   pathover_of_tr_eq !seq_colim_over_glue
 
-  definition glue_over_rep (k : ℕ) (p : P (rep f k a)) : pathover (seq_colim_over g)
-    (ιo g p) (rep_glue f a k) (ι' _ k p) :=
+  definition glue_over_rep (k : ℕ) (p : P (rep f k a)) :
+    pathover (seq_colim_over g) (ιo g p) (rep_glue f a k) (ι' _ k p) :=
   begin
     revert a p, induction k with k IH, all_goals intro a p,
     { constructor},
