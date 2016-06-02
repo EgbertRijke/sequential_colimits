@@ -10,8 +10,8 @@ open eq nat sigma sigma.ops quotient equiv pi is_trunc is_equiv fiber function
 namespace seq_colim
 
   -- note: this clashes with the abbreviation defined in namespace "colimit"
-  abbreviation ι := @inclusion
-  abbreviation ι' [parsing_only] {A} (f n) := @inclusion A f n
+  abbreviation ι  [constructor] := @inclusion
+  abbreviation ι' [constructor] [parsing_only] {A} (f n) := @inclusion A f n
 
   variables {A : ℕ → Type} (f : seq_diagram A)
 
@@ -49,7 +49,7 @@ namespace seq_colim
   section
   variables {n : ℕ} (a : A n)
 
-  definition rep_glue (k : ℕ) : ι f (rep f k a) = ι f a :=
+  definition rep_glue (k : ℕ) (a : A n) : ι f (rep f k a) = ι f a :=
   begin
     induction k with k IH,
     { reflexivity},
@@ -331,7 +331,7 @@ namespace seq_colim
   end
   omit g
 
-  definition ιo (p : P a) : seq_colim_over g (ι f a) :=
+  definition ιo [constructor] (p : P a) : seq_colim_over g (ι f a) :=
   ι' _ 0 p
 
   -- definition rep_equiv_rep_rep (l : ℕ)
@@ -403,22 +403,31 @@ namespace seq_colim
     pathover (seq_colim_over g) (ιo g (g p)) (glue f a) (ι' _ 1 (g p)) :=
   pathover_of_tr_eq !seq_colim_over_glue
 
+  definition glue_over_gen (k : ℕ) (p : P (rep f k a)) :
+    pathover (seq_colim_over g) (ι' (seq_diagram_of_over g (f a)) k ((rep_f f k a)⁻¹ᵒ ▸o g p))
+             (glue f a)         (ι' (seq_diagram_of_over g a) (succ k) (g p)) :=
+  sorry
+
   definition glue_over_rep (k : ℕ) (p : P (rep f k a)) :
-    pathover (seq_colim_over g) (ιo g p) (rep_glue f a k) (ι' _ k p) :=
+    pathover (seq_colim_over g) (ιo g p) (rep_glue f k a) (ι' _ k p) :=
   begin
     revert a p, induction k with k IH, all_goals intro a p,
     { constructor},
-    { rewrite [↑seq_diagram_of_over,↑rep_glue],
-      refine !pathover_tr ⬝o _,
+    { change pathover (seq_colim_over g) (ιo g p)
+                      (glue f (rep f k a) ⬝ rep_glue f k a) (ι' _ (succ k) p),
+      exact sorry
+      --refine !glue_over ⬝o _,
+-- rewrite [↑seq_diagram_of_over,↑rep_glue],
+--       refine !pathover_tr ⬝o _,
       -- refine eq_concato !glue⁻¹ _, esimp,
       -- refine !glue_over⁻¹ᵒ ⬝o _,
-      exact sorry
+      -- exact sorry
     }
   end
 
   -- we can define a function from the colimit of total spaces to the total space of the colimit.
 
-  definition sigma_colim_of_colim_sigma (a : seq_colim (seq_diagram_sigma g)) :
+  definition sigma_colim_of_colim_sigma [unfold 5] (a : seq_colim (seq_diagram_sigma g)) :
     Σ(x : seq_colim f), seq_colim_over g x :=
   begin
   induction a with n v n v,
@@ -459,33 +468,10 @@ namespace seq_colim
   definition colim_sigma_of_sigma_colim_constructor [unfold 7] (p : seq_colim_over g (ι f a))
     : seq_colim (seq_diagram_sigma g) :=
   begin
-    induction p with k p,
+    induction p with k p k p,
     { exact ι _ ⟨rep f k a, p⟩},
     { apply glue}
   end
-
-  -- the following definition is currently unused
-  definition colim_sigma_of_sigma_colim_path1_rev {k : ℕ} (p : P (rep f k a)) :
-    ι (seq_diagram_sigma g) ⟨rep f k (f a), cast (apo011 P (succ_add n k) (rep_f f k a))⁻¹ (g p)⟩ =
-    ι (seq_diagram_sigma g) ⟨rep f k a, p⟩ :=
-    -- ι (seq_diagram_sigma g) ⟨rep f k (f a), p⟩ = ι (seq_diagram_sigma g)
-    -- ⟨rep f (succ k) a, cast (apo011 P (succ_add n k) (rep_f f k a)) p⟩ :=
-  begin
-    refine _ ⬝ !glue,
-    fapply apo011 (ι' (seq_diagram_sigma g)) (succ_add n k),
-    apply sigma_pathover _ ⟨rep f k (f a), cast (apo011 P (succ_add n k) (rep_f f k a))⁻¹ᵖ (g p)⟩
-                           ⟨rep f (succ k) a, _⟩ (rep_f f k a), esimp,
-    apply tr_pathover
-  end
-
-  -- definition colim_sigma_of_sigma_colim_path1 {k : ℕ} (p : P (rep f k (f a))) :
-  --   ι (seq_diagram_sigma g) ⟨rep f k (f a), p⟩ =
-  --   ι (seq_diagram_sigma g) ⟨rep f (succ k) a, transporto P (rep_f f k a) p⟩ :=
-  -- begin
-  --   fapply apo011 (ι' (seq_diagram_sigma g)) (succ_add n k),
-  --   apply sigma_pathover _ _ _ (rep_f f k a), esimp,
-  --   exact !pathover_tro
-  -- end
 
   definition colim_sigma_of_sigma_colim_path1 {k : ℕ} (p : P (rep f k (f a))) :
     ι (seq_diagram_sigma g) ⟨rep f k (f a), p⟩ =
@@ -495,30 +481,13 @@ namespace seq_colim
     apply my.pathover_tro
   end
 
-
-  -- TODO: move
-  definition arrow_pathover_constant_right_rev {A : Type} {B : A → Type} {C : Type} {a a' : A}
-    {f : B a → C} {g : B a' → C} {p : a = a'} (r : Π(b : B a'), f (p⁻¹ ▸ b) = g b) : f =[p] g :=
-  arrow_pathover_right (λb, pathover_of_eq (r b))
-
-  -- definition natural_square011_tr {A A' X : Type} {B : A → Type} {f : Πa, B a → A'}
-  --   {a₁ a₂ : X → A} {b₁ : Πx, B (a₁ x)} {b₂ : Πx, B (a₂ x)}
-  --   {p : Πx, a₁ x = a₂ x} (q : Πx, b₁ x =[p x] b₂ x) (x y : X) :
-  --   square (apo011 f (p x) (q x)) (apo011 f (p y) (q y)) (_) (_) :=
-  -- _
-
-  --set_option pp.notation false
-  definition colim_sigma_of_sigma_colim (v : Σ(x : seq_colim f), seq_colim_over g x)
-    : seq_colim (seq_diagram_sigma g) :=
+  definition colim_sigma_of_sigma_colim_path2 {k : ℕ} (p : P (rep f k (f a))) :
+  square (colim_sigma_of_sigma_colim_path1 g (g p)) (colim_sigma_of_sigma_colim_path1 g p)
+    (ap (colim_sigma_of_sigma_colim_constructor g) (glue (seq_diagram_of_over g (f a)) p))
+    (ap (λx, colim_sigma_of_sigma_colim_constructor g (shift_down (seq_diagram_of_over g a)
+          (seq_colim_functor (λk, transporto P (rep_f f k a)) (λk p, rep_f_equiv_natural g p) x)))
+      (glue (seq_diagram_of_over g (f a)) p)) :=
   begin
-    induction v with x p,
-    induction x with n a n a,
-    { exact colim_sigma_of_sigma_colim_constructor g p},
-    esimp, apply arrow_pathover_constant_right, intro x, esimp at x,
-    rewrite seq_colim_over_glue,
-    induction x with k p k p,
-    { esimp, exact colim_sigma_of_sigma_colim_path1 g p},
-    esimp, apply eq_pathover,
     refine !elim_glue ⬝ph _,
     refine _ ⬝hp (ap_compose' (colim_sigma_of_sigma_colim_constructor g ∘ shift_down _) _ _)⁻¹,
     refine _ ⬝hp ap02 _ !elim_glue⁻¹,
@@ -526,9 +495,101 @@ namespace seq_colim
     refine _ ⬝hp (!ap_compose' ◾ (ap_compose _ _ _)⁻¹),
     refine _ ⬝hp whisker_left _ (ap02 _ !elim_glue⁻¹),
     refine _ ⬝hp whisker_left _ !elim_glue⁻¹,
-    refine _ ⬝pv whisker_rt _ !my.natural_square0111,
+    refine _ ⬝pv whisker_rt _ (my.natural_square0111 P (my.pathover_tro P (rep_f f k a) p) g
+                                                     (λn a p, glue (seq_diagram_sigma g) ⟨a, p⟩)),
     refine _ ⬝ whisker_left _ (ap02 _ !inv_inv⁻¹ ⬝ !ap_inv),
     symmetry, apply my.apo0111_precompose
+  end
+
+  -- TODO: move
+  definition arrow_pathover_constant_right_rev {A : Type} {B : A → Type} {C : Type} {a a' : A}
+    {f : B a → C} {g : B a' → C} {p : a = a'} (r : Π(b : B a'), f (p⁻¹ ▸ b) = g b) : f =[p] g :=
+  arrow_pathover_right (λb, pathover_of_eq (r b))
+
+  definition colim_sigma_of_sigma_colim [unfold 5] (v : Σ(x : seq_colim f), seq_colim_over g x)
+    : seq_colim (seq_diagram_sigma g) :=
+  begin
+    induction v with x p,
+    induction x with n a n a,
+    { exact colim_sigma_of_sigma_colim_constructor g p},
+    esimp, apply arrow_pathover_constant_right, intro x, esimp at x,
+    refine _ ⬝ ap (colim_sigma_of_sigma_colim_constructor g) !seq_colim_over_glue⁻¹,
+    induction x with k p k p,
+    { esimp, exact colim_sigma_of_sigma_colim_path1 g p},
+    apply eq_pathover, apply colim_sigma_of_sigma_colim_path2
+  end
+
+  definition apo11' [unfold 12] {A X : Type} {B : A → Type} {a a' : A} {p : a = a'}
+    {f : B a → X} {g : B a' → X} (q : f =[p] g) {b : B a} {b' : B a'} (r : b =[p] b') :
+    f b = g b' :=
+  begin
+    induction r, exact ap10 (eq_of_pathover_idp q) b
+  end
+
+  -- TODO: make argument p in pathover_of_eq explicit
+  definition eq_of_pathover_idp_pathover_of_eq {A X : Type} (x : X) {a a' : A} (p : a = a') :
+    eq_of_pathover_idp (@pathover_of_eq _ _ _ _ (idpath x)  _ _ p) = p :=
+  by induction p; reflexivity
+
+  definition apo11'_arrow_pathover_constant_right {A X : Type} {B : A → Type} {a a' : A} {p : a = a'}
+    {f : B a → X} {g : B a' → X} (q : Πb, f b = g (p ▸ b)) {b : B a} {b' : B a'} (r : b =[p] b') :
+    apo11' (arrow_pathover_constant_right q) r = q b ⬝ ap g (tr_eq_of_pathover r) :=
+  begin
+    induction r, esimp at *,
+    unfold [arrow_pathover_constant_right, arrow_pathover_left, ap10],
+    rewrite [to_right_inv !pathover_idp],
+    refine apd10 (to_right_inv !eq_equiv_homotopy _) b ⬝ _,
+    apply eq_of_pathover_idp_pathover_of_eq
+  end
+
+  definition ap_sigma_eq {A X : Type} {B : A → Type} (f : (Σa, B a) → X)
+    {a a' : A} {p : a = a'} {b : B a} {b' : B a'} (q : b =[p] b') :
+    ap f (sigma_eq p q) = apo11' (apd (λa b, f ⟨a, b⟩) p) q :=
+  by induction q; reflexivity
+
+  definition tr_eq_of_pathover_concato_eq {A : Type} {B : A → Type} {a a' : A} {p : a = a'}
+    {b : B a} {b' b'' : B a'} (q : b =[p] b') (r : b' = b'') :
+    tr_eq_of_pathover (q ⬝op r) = tr_eq_of_pathover q ⬝ r :=
+  by induction r; reflexivity
+
+  definition colim_sigma_of_sigma_colim_of_colim_sigma (a : seq_colim (seq_diagram_sigma g)) :
+    colim_sigma_of_sigma_colim g (sigma_colim_of_colim_sigma g a) = a :=
+  begin
+  induction a with n v n v,
+  { induction v with a p, reflexivity},
+  { induction v with a p, esimp, apply eq_pathover_id_right, apply hdeg_square,
+    refine ap_compose (colim_sigma_of_sigma_colim g) _ _ ⬝ _,
+    refine ap02 _ !elim_glue ⬝ _, esimp,
+    refine !ap_sigma_eq ⬝ _,
+    refine ap (λx, apo11' x _) !rec_glue ⬝ _,
+    refine !apo11'_arrow_pathover_constant_right ⬝ _,
+    rewrite [▸*, tr_eq_of_pathover_concato_eq, ap_con, ↑glue_over,
+             to_right_inv !pathover_equiv_tr_eq, ap_inv, con.assoc, inv_con_cancel_left],
+    refine whisker_left _ !elim_glue ⬝ _,
+    apply idp_con}
+  end
+
+  definition sigma_colim_of_colim_sigma_of_sigma_colim_constructor [unfold 7]
+    (p : seq_colim_over g (ι f a)) :
+    sigma_colim_of_colim_sigma g (colim_sigma_of_sigma_colim g ⟨ι f a, p⟩) = ⟨ι f a, p⟩ :=
+  begin
+    induction p with k p k p,
+    { apply sigma_eq (rep_glue f k a), esimp, apply (glue_over_rep g k p)},
+    { apply eq_pathover, esimp, exact sorry }
+  end
+
+  definition sigma_colim_of_colim_sigma_of_sigma_colim (v : Σ(x : seq_colim f), seq_colim_over g x)
+    : sigma_colim_of_colim_sigma g (colim_sigma_of_sigma_colim g v) = v :=
+  begin
+    induction v with x p,
+    induction x with n a n a,
+    { apply sigma_colim_of_colim_sigma_of_sigma_colim_constructor},
+    apply pi_pathover_left, intro x, esimp at x,
+    exact sorry
+    -- refine _ ⬝ ap (colim_sigma_of_sigma_colim_constructor g) !seq_colim_over_glue⁻¹,
+    -- induction x with k p k p,
+    -- { esimp, exact colim_sigma_of_sigma_colim_path1 g p},
+    -- apply eq_pathover, apply colim_sigma_of_sigma_colim_path2
   end
 
   variable (P)

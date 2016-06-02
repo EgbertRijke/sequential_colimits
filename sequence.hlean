@@ -183,7 +183,7 @@ namespace seq_colim
       seq_diagram (λk, P (rep f k a)) :=
     λk p, g p
 
-    definition seq_diagram_sigma : seq_diagram (λn, Σ(x : A n), P x) :=
+    definition seq_diagram_sigma [unfold 6] : seq_diagram (λn, Σ(x : A n), P x) :=
     λn v, ⟨f v.1, g v.2⟩
 
     variables {n : ℕ} (f P)
