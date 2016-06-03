@@ -32,7 +32,7 @@ namespace seq_colim
 
   section
   local attribute is_equiv_rep0 [instance] [priority 500]
-  definition equiseq_colim_equiv (H : is_equiseq f) : is_equiv (@ι A f 0) :=
+  definition is_equiv_ι (H : is_equiseq f) : is_equiv (@ι A f 0) :=
   begin
     fapply adjointify,
     { exact colim_back f},
@@ -267,13 +267,13 @@ namespace seq_colim
   end functor
 
   definition seq_colim_constant_seq (X : Type) : seq_colim (constant_seq X) ≃ X :=
-  (equiv.mk _ (equiseq_colim_equiv _ (λn, !is_equiv_id)))⁻¹ᵉ
+  (equiv.mk _ (is_equiv_ι _ (λn, !is_equiv_id)))⁻¹ᵉ
 
   definition is_contr_seq_colim {A : ℕ → Type} (f : seq_diagram A)
     [Πk, is_contr (A k)] : is_contr (seq_colim f) :=
   begin
     apply @is_trunc_is_equiv_closed (A 0),
-    apply equiseq_colim_equiv, intro n, apply is_equiv_of_is_contr
+    apply is_equiv_ι, intro n, apply is_equiv_of_is_contr
   end
 
   /- colimits of dependent sequences, sigma's commute with colimits -/

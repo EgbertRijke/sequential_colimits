@@ -6,11 +6,11 @@ Authors: Floris van Doorn, Egbert Rijke
 
 import .seq_colim
 
-open eq nat is_equiv equiv is_trunc pi unit function
+open eq nat is_equiv equiv is_trunc pi unit function prod unit
 
+  -- TODO: MOVE
   section funext
   open funext
-
   variables {A B C : Type} {g g' : B → C} {f f' : A → B} {P : A → Type}
 
   definition hwhisker_left [unfold_full] (g : B → C) {f f' : A → B} (H : f ~ f') :
@@ -58,7 +58,8 @@ open eq nat is_equiv equiv is_trunc pi unit function
 
 namespace seq_colim
 
-  variables {A : ℕ → Type} (f : seq_diagram A)
+  universe variable u
+  variables {A : ℕ → Type.{u}} (f : seq_diagram A)
   variables {n : ℕ} (a : A n)
 
   definition arrow_colim_of_colim_arrow [unfold 4] {X : Type}
@@ -66,9 +67,14 @@ namespace seq_colim
   begin induction g with n g n g, exact ι f (g x), exact glue f (g x) end
 
   definition omega_compact [class] (X : Type) : Type :=
-  Π(A : ℕ → Type) (f : seq_diagram A),
+  Π⦃A : ℕ → Type⦄ (f : seq_diagram A),
   is_equiv (arrow_colim_of_colim_arrow f :
              seq_colim (seq_diagram_arrow_left f X) → (X → seq_colim f))
+
+  definition equiv_of_omega_compact [unfold 4] (X : Type) [H : omega_compact X]
+    {A : ℕ → Type} (f : seq_diagram A) :
+    seq_colim (seq_diagram_arrow_left f X) ≃ (X → seq_colim f) :=
+  equiv.mk _ (H f)
 
   local attribute is_contr_seq_colim [instance]
   definition is_contr_empty_arrow [instance] (X : Type) : is_contr (empty → X) :=
@@ -108,25 +114,68 @@ namespace seq_colim
         apply unit_arrow_eq_compose}}
   end
 
+  -- TODO: remove
+  definition my_arrow_unit_left [constructor] (B : Type) : (unit → B) ≃ B :=
+  begin
+    fapply equiv.MK,
+    { intro f, exact f ⋆},
+    { intro b a, exact b},
+    { intro b, reflexivity},
+    { intro f, apply eq_of_homotopy, intro a, exact ap f !is_prop.elim}
+  end
+
+  -- The following is a start of a different proof that unit is omega-compact,
+  -- which proves first that the types are equivalent
+  definition omega_compact_unit' [instance] [constructor] : omega_compact unit :=
+  begin
+    intro A f,
+    fapply is_equiv_of_equiv_of_homotopy,
+    { refine _ ⬝e !my_arrow_unit_left⁻¹ᵉ, fapply seq_colim_equiv,
+      { intro n, apply my_arrow_unit_left},
+      intro n f, reflexivity},
+    { esimp, intro x, apply eq_of_homotopy, intro u, induction u, esimp,
+      induction x with n g n g,
+      { reflexivity},
+      apply eq_pathover, apply hdeg_square,
+      refine !elim_glue ⬝ !idp_con ⬝ _,
+      unfold [arrow_colim_of_colim_arrow], apply !elim_glue⁻¹}
+  end
+
+  attribute imp_imp_equiv_prod_imp [constructor]
+  local attribute equiv_of_omega_compact [constructor]
+  definition omega_compact_prod [instance] [constructor] {X Y : Type} [omega_compact.{_ u} X]
+    [omega_compact.{u u} Y] : omega_compact.{_ u} (X × Y) :=
+  begin
+    intro A f,
+    fapply is_equiv_of_equiv_of_homotopy,
+    { exact calc
+        seq_colim (seq_diagram_arrow_left f (X × Y))
+              ≃ seq_colim (seq_diagram_arrow_left (seq_diagram_arrow_left f Y) X) :
+                  begin
+                    apply seq_colim_equiv (λn, !imp_imp_equiv_prod_imp⁻¹ᵉ),
+                    esimp, intro n f, reflexivity
+                  end
+          ... ≃ (X → seq_colim (seq_diagram_arrow_left f Y))  : !equiv_of_omega_compact
+          ... ≃ (X → Y → seq_colim f) : arrow_equiv_arrow_right _ !equiv_of_omega_compact
+          ... ≃ (X × Y → seq_colim f) : imp_imp_equiv_prod_imp},
+    intro g, esimp,
+    apply eq_of_homotopy, intro v, induction v with x y, esimp,
+    induction g with n g n g,
+    { reflexivity},
+    { apply eq_pathover, apply hdeg_square,
+      refine ap_compose (λz, arrow_colim_of_colim_arrow f z y) _ _ ⬝ _,
+      refine ap02 _ (ap_compose (λz, arrow_colim_of_colim_arrow _ z x) _ _) ⬝ _,
+      refine ap02 _ (ap02 _ !elim_glue) ⬝ _, refine ap02 _ (ap02 _ !idp_con) ⬝ _, esimp,
+      refine ap02 _ !elim_glue ⬝ _, refine !elim_glue ⬝ !elim_glue⁻¹}
+  end
+
   definition seq_colim_pi_equiv {X : Type} {A : X → ℕ → Type} (g : Π⦃x n⦄, A x n → A x (succ n)) :
     seq_colim (seq_diagram_pi g) ≃ Πx, seq_colim (@g x) :=
   begin
-
+    exact sorry
   end
 
-  -- The following is a start of a different proof, which proves first that the types are equivalent
-  -- definition omega_compact_unit2 [instance] [constructor] : omega_compact unit :=
-  -- begin
-  --   intro A f,
-  --   fapply is_equiv_of_equiv_of_homotopy,
-  --   { refine _ ⬝e !arrow_unit_left⁻¹ᵉ, fapply seq_colim_equiv,
-  --     { intro n, apply arrow_unit_left},
-  --     intro n f, reflexivity},
-  --   { esimp, intro x, apply eq_of_homotopy, intro u, induction u, esimp,
-  --     induction x with n g n g,
-  --     { reflexivity},
-  --     apply eq_pathover, apply hdeg_square,
-  --     }
-  -- end
+  -- set_option pp.universes true
+  -- print seq_diagram_arrow_left
 
 end seq_colim

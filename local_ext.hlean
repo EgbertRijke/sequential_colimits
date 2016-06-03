@@ -58,9 +58,9 @@ section quasi_local_extension
     induction x,
     { induction a,
       { exact f a},
-      { induction a with a v, induction v with f q, }},
-    { },
-    { }
+      { induction a with a v, induction v with f q, exact sorry}},
+    { exact sorry},
+    { exact sorry}
   end
 
   protected definition elim {Y : Type} [is_local Y]

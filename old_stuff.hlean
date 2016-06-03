@@ -74,7 +74,7 @@ namespace seq_colim
 
     definition rep0_into_equiseq_isequiv (H : is_equiseq f)
       : seq_trans_isequiv f (constant_seq (A 0)) (rep0 f) (rep0_into f) :=
-    rep0_equiseq_is_equiv f
+    is_equiv_rep0 f
 
   end sequential_transformations
 end seq_colim
