@@ -38,11 +38,11 @@ namespace seq_colim
   begin
     intro a,
     induction k with k x,
-    exact a,
-    exact f x
+      exact a,
+      exact f x
   end
 
-  definition  rep0_back [H : is_equiseq f] (k : ℕ) : A k → A 0 :=
+  definition rep0_back [H : is_equiseq f] (k : ℕ) : A k → A 0 :=
   begin
     induction k with k IH: intro a,
     exact a,

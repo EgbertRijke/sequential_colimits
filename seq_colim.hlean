@@ -22,25 +22,27 @@ namespace seq_colim
     { exact glue f (rep0 f k a) ⬝ IH}
   end
 
-  section
-  local attribute is_equiv_rep0 [instance] [priority 500]
   definition colim_back [unfold 4] [H : is_equiseq f] : seq_colim f → A 0 :=
   begin
     intro x,
     induction x with k a k a,
-    { exact (rep0 f k)⁻¹ a},
-    exact ap ((rep0 f k)⁻¹) (left_inv (@f k) a),
+    { exact rep0_back f k a},
+    rexact ap (rep0_back f k) (left_inv (@f k) a),
   end
 
+  section
+  local attribute is_equiv_rep0 [instance] [priority 500]
   definition equiseq_colim_equiv (H : is_equiseq f) : is_equiv (@ι A f 0) :=
   begin
     fapply adjointify,
     { exact colim_back f},
     { intro x, induction x with k a k a,
-      esimp,
-      refine (rep0_glue f k (rep0_back f k a))⁻¹ ⬝ _,
-      exact ap (ι' f k) (right_inv (rep0 f k) a),
-      exact sorry},
+      { esimp,
+        refine (rep0_glue f k (rep0_back f k a))⁻¹ ⬝ _,
+        exact ap (ι f) (right_inv (rep0 f k) a)},
+      apply eq_pathover_id_right,
+      refine (ap_compose (ι f) (colim_back f) _) ⬝ph _,
+      refine ap02 _ !elim_glue ⬝ph _, exact sorry},
     intro a,
     reflexivity,
   end
@@ -241,17 +243,6 @@ namespace seq_colim
     : Π(x : seq_colim f), P x :=
   by induction v with Pincl Pglue; exact seq_colim.rec f Pincl Pglue
 
-  definition eq_pathover_dep {A : Type} {B : A → Type} {a a' : A}
-    {f g : Πa, B a} {p : a = a'} {q : f a = g a} {r : f a' = g a'}
-    (s : squareover B !hrfl (pathover_idp_of_eq q) (pathover_idp_of_eq r) (apd f p) (apd g p))
-      : q =[p] r :=
-  begin
-    induction p, apply pathover_idp_of_eq,
-    let H  := pathover_of_vdeg_squareover s,
-    let H' := eq_of_pathover_idp H,
-    exact eq_of_fn_eq_fn !pathover_idp⁻¹ᵉ H',
-  end
-
   definition is_equiv_seq_colim_rec (P : seq_colim f → Type) :
     is_equiv (seq_colim_rec_unc :
       (Σ(Pincl : Π ⦃n : ℕ⦄ (a : A n), P (ι f a)),
@@ -284,25 +275,6 @@ namespace seq_colim
     apply @is_trunc_is_equiv_closed (A 0),
     apply equiseq_colim_equiv, intro n, apply is_equiv_of_is_contr
   end
-
-  -- definition is_prop_seq_colim {A : ℕ → Type} (f : seq_diagram A)
-  --   [Πk, is_prop (A k)] : is_prop (seq_colim f) :=
-  -- begin
-  --   apply is_prop.mk,
-  --   intro x,
-  --   induction x using seq_colim.rec_prop with n a n a,
-  -- end
-
-  -- definition is_trunc_seq_colim (n : ℕ₋₂) {A : ℕ → Type} (f : seq_diagram A)
-  --   [Πk, is_trunc n (A k)] : is_trunc n (seq_colim f) :=
-  -- begin
-  --   induction n with n IH,
-  --   { fapply is_contr.mk,
-  --     { exact ι' f 0 !center},
-  --     { },
-  --   { }
-  -- end
-
 
   /- colimits of dependent sequences, sigma's commute with colimits -/
 
@@ -367,41 +339,10 @@ namespace seq_colim
     : transport (seq_colim_over g) (glue f a)⁻¹ x = to_inv (over_f_equiv g a) (shift_up _ x) :=
   ap10 (elim_type_glue_inv _ _ a) x
 
---   definition seq_colim_over_glue {a : A n} (x : seq_colim_over g (ι f (f a)))
---     : pathover (seq_colim_over g) x (glue f a) (shift_down f (to_inv (over_f_equiv g a) x)) :=
--- -- pathover_of_tr_eq (ap10 (elim_type_glue _ _ a) x)
---   begin
---     esimp [over_f_equiv],
---     exact sorry
---   end
-
-  -- set_option pp.universes true
-  -- check @elim_type_glue
-  -- check @seq_colim
-  -- check @seq_diagram
-  -- set_option formatter.hide_full_terms false
---   definition seq_colim_over_glue' (k : ℕ) (p : P (rep k (f a)))
---     : pathover (seq_colim_over P) (ι' k p) (glue a) (ι' (succ k)
---                                   (cast ((apo011 P (succ_add n k) (rep_f k a))) p)) :=
--- concato_eq (pathover_of_tr_eq (ap10 (elim_type_glue.{_ _} (λ ⦃n : ℕ⦄ (a : A n), seq_colim.{v} (λ (k : ℕ), P (rep.{l_1} k a))) _ a) (ι' k p))) sorry
-
---  begin exact sorry
---     refine concato_eq (pathover_of_tr_eq (ap10 (elim_type_glue.{_ _} (λ ⦃n : ℕ⦄ (a : A n), seq_colim.{v} (λ (k : ℕ), P (rep.{l_1} k a))) _ a) (ι' k p))) sorry,
---    esimp [equiv.trans,equiv.symm,over_f_equiv],
---     apply ap ι, unfold cast,
---     rewrite [-my.apo011_inv],
---    exact sorry
---  end
-
-  -- definition seq_colim_over_glue' {k : ℕ} (p : P (rep k (f a)))
-  --   : pathover (seq_colim_over P) (ι' k p) (glue a) (shift_down ((to_fun (over_f_equiv a P))⁻¹ (ι' k p))) :=
-  -- begin
-  --   esimp [over_f_equiv]
-  -- end
-
   definition glue_over (p : P a) :
     pathover (seq_colim_over g) (ιo g (g p)) (glue f a) (ι' _ 1 (g p)) :=
   pathover_of_tr_eq !seq_colim_over_glue
+
 
   definition glue_over_gen (k : ℕ) (p : P (rep f k a)) :
     pathover (seq_colim_over g) (ι' (seq_diagram_of_over g (f a)) k ((rep_f f k a)⁻¹ᵒ ▸o g p))
@@ -462,7 +403,8 @@ namespace seq_colim
       { induction v with a' p', esimp, exact sorry}}
   end
 
-  /- ATTEMPT 2: give the reverse function and show they are mutually inverses -/
+  /- ATTEMPT 2: give the reverse function and show they are mutually inverses
+    This attempt looks most promising. -/
   variable {P}
 
   definition colim_sigma_of_sigma_colim_constructor [unfold 7] (p : seq_colim_over g (ι f a))
@@ -519,6 +461,7 @@ namespace seq_colim
     apply eq_pathover, apply colim_sigma_of_sigma_colim_path2
   end
 
+  -- TODO: move (and rename)
   definition apo11' [unfold 12] {A X : Type} {B : A → Type} {a a' : A} {p : a = a'}
     {f : B a → X} {g : B a' → X} (q : f =[p] g) {b : B a} {b' : B a'} (r : b =[p] b') :
     f b = g b' :=
@@ -527,10 +470,12 @@ namespace seq_colim
   end
 
   -- TODO: make argument p in pathover_of_eq explicit
+  -- TODO: move
   definition eq_of_pathover_idp_pathover_of_eq {A X : Type} (x : X) {a a' : A} (p : a = a') :
     eq_of_pathover_idp (@pathover_of_eq _ _ _ _ (idpath x)  _ _ p) = p :=
   by induction p; reflexivity
 
+  -- TODO: move
   definition apo11'_arrow_pathover_constant_right {A X : Type} {B : A → Type} {a a' : A} {p : a = a'}
     {f : B a → X} {g : B a' → X} (q : Πb, f b = g (p ▸ b)) {b : B a} {b' : B a'} (r : b =[p] b') :
     apo11' (arrow_pathover_constant_right q) r = q b ⬝ ap g (tr_eq_of_pathover r) :=
@@ -542,17 +487,19 @@ namespace seq_colim
     apply eq_of_pathover_idp_pathover_of_eq
   end
 
+  -- TODO: move
   definition ap_sigma_eq {A X : Type} {B : A → Type} (f : (Σa, B a) → X)
     {a a' : A} {p : a = a'} {b : B a} {b' : B a'} (q : b =[p] b') :
     ap f (sigma_eq p q) = apo11' (apd (λa b, f ⟨a, b⟩) p) q :=
   by induction q; reflexivity
 
+  -- TODO: move
   definition tr_eq_of_pathover_concato_eq {A : Type} {B : A → Type} {a a' : A} {p : a = a'}
     {b : B a} {b' b'' : B a'} (q : b =[p] b') (r : b' = b'') :
     tr_eq_of_pathover (q ⬝op r) = tr_eq_of_pathover q ⬝ r :=
   by induction r; reflexivity
 
-  definition colim_sigma_of_sigma_colim_of_colim_sigma (a : seq_colim (seq_diagram_sigma g)) :
+  theorem colim_sigma_of_sigma_colim_of_colim_sigma (a : seq_colim (seq_diagram_sigma g)) :
     colim_sigma_of_sigma_colim g (sigma_colim_of_colim_sigma g a) = a :=
   begin
   induction a with n v n v,
@@ -578,7 +525,7 @@ namespace seq_colim
     { apply eq_pathover, esimp, exact sorry }
   end
 
-  definition sigma_colim_of_colim_sigma_of_sigma_colim (v : Σ(x : seq_colim f), seq_colim_over g x)
+  theorem sigma_colim_of_colim_sigma_of_sigma_colim (v : Σ(x : seq_colim f), seq_colim_over g x)
     : sigma_colim_of_colim_sigma g (colim_sigma_of_sigma_colim g v) = v :=
   begin
     induction v with x p,
@@ -597,8 +544,8 @@ namespace seq_colim
     : (Σ(x : seq_colim f), seq_colim_over g x) ≃ seq_colim (seq_diagram_sigma g) :=
   equiv.MK (colim_sigma_of_sigma_colim g)
            (sigma_colim_of_colim_sigma g)
-           sorry
-           sorry
+           (colim_sigma_of_sigma_colim_of_colim_sigma g)
+           (sigma_colim_of_colim_sigma_of_sigma_colim g)
 
 
   /- ATTEMPT 3: try to prove the equivalence by using flattening -/
@@ -643,3 +590,25 @@ namespace seq_colim
 
 
 end seq_colim
+
+
+  -- We need a characterization of equality in seq_colim for the following results:
+
+
+  -- definition is_prop_seq_colim {A : ℕ → Type} (f : seq_diagram A)
+  --   [Πk, is_prop (A k)] : is_prop (seq_colim f) :=
+  -- begin
+  --   apply is_prop.mk,
+  --   intro x,
+  --   induction x using seq_colim.rec_prop with n a n a,
+  -- end
+
+  -- definition is_trunc_seq_colim (n : ℕ₋₂) {A : ℕ → Type} (f : seq_diagram A)
+  --   [Πk, is_trunc n (A k)] : is_trunc n (seq_colim f) :=
+  -- begin
+  --   induction n with n IH,
+  --   { fapply is_contr.mk,
+  --     { exact ι' f 0 !center},
+  --     { },
+  --   { }
+  -- end
