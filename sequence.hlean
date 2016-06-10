@@ -9,6 +9,16 @@ import types.nat .move_to_lib types.fin
 open nat eq equiv sigma sigma.ops is_equiv
 
   -- MOVE
+  definition idontwanttoprovethis (n l k : ℕ) :
+    succ_add (n + l) k ⬝ nat.add_assoc n l (succ k) ⬝ ap
+    (λ z, n + z)
+    (succ_add l k)⁻¹ = nat.add_assoc n (succ l) k :=
+  begin
+    induction k with k IH,
+    { reflexivity},
+    { esimp, refine _ ⬝ ap02 succ IH,
+      exact sorry}
+  end
 
 
 namespace seq_colim
@@ -138,10 +148,37 @@ namespace seq_colim
   end
 
   definition rep_rep (k l : ℕ) (a : A n) :
+    rep f k (rep f l a) =[nat.add_assoc n l k] rep f (l + k) a :=
+  begin
+    induction k with k IH,
+    { constructor},
+    { apply pathover_ap, exact apo f IH}
+  end
+print apd
+print rep
+print pathover_ap
+print succ_add
+print nat.add_assoc
+
+  -- this should be a squareover
+  definition rep_rep_succ (k l : ℕ) (a : A n) :
+    rep_rep f k (succ l) a = change_path (idontwanttoprovethis n l k)
+    (rep_f f k (rep f l a) ⬝o
+     rep_rep f (succ k) l a ⬝o
+     pathover_ap _ (λz, n + z) (apd (λz, rep f z a) (succ_add l k)⁻¹ᵖ)) :=
+  begin
+    induction k with k IH,
+    { constructor},
+    { exact sorry}
+  end
+
+
+  -- old: don't use
+  definition rep_rep' (k l : ℕ) (a : A n) :
     rep f k (rep f l a) =[nat.add_add n l k] rep f (k + l) a :=
   begin
     induction l with l IH,
-    { esimp [rep, nat.add_add, add], constructor},
+    { constructor},
     { rewrite [▸rep f k (f (rep f l a)) =[ succ_add (n + l) k ⬝ ap succ (nat.add_add n l k)]
                 f (rep f (k + l) a)],
       refine rep_f f k (rep f l a) ⬝o _,
@@ -219,7 +256,7 @@ namespace seq_colim
     my.equiv_apd011 P (rep_f f k a)
 
     theorem rep_rep_equiv [constructor] (a : A n) (k l : ℕ) :
-      P (rep f (k + l) a) ≃ P (rep f k (rep f l a)) :=
+      P (rep f (l + k) a) ≃ P (rep f k (rep f l a)) :=
     (my.equiv_apd011 P (rep_rep f k l a))⁻¹ᵉ
 
   end over

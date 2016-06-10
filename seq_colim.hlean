@@ -59,16 +59,8 @@ set_option pp.binder_types true
     [is_equiv f] [is_equiv g] : f⁻¹ ~ g⁻¹ :=
   λa, ap f⁻¹ ((right_inv g a)⁻¹ ⬝ (p (g⁻¹ a))⁻¹) ⬝ left_inv f (g⁻¹ a)
 
-  definition right_inv_compose {A B C : Type} (g : B → C) (f : A → B) (h : A → C)
-    (p : h ~ g ∘ f) (c : C) [is_equiv g] [is_equiv f] [is_equiv h] :
-    right_inv h c = (p (h⁻¹ c)) ⬝
-    ap g (ap f proof @(inv_homotopy_inv_of_homotopy h (g ∘ f) p) _ !is_equiv_compose c qed ⬝ right_inv f (g⁻¹ c)) ⬝
-    right_inv g c :=
-  sorry
-
   section
   local attribute is_equiv_rep0 [instance] --[priority 500]
-  set_option trace.class_instances true
   definition is_equiv_ι (H : is_equiseq f) : is_equiv (ι' f 0) :=
   begin
     fapply adjointify,
@@ -356,6 +348,7 @@ set_option pp.binder_types true
   definition ιo [constructor] (p : P a) : seq_colim_over g (ι f a) :=
   ι' _ 0 p
 
+  -- Warning: the order of addition has changed in rep_rep
   -- definition rep_equiv_rep_rep (l : ℕ)
   --   : @seq_colim (λk, P (rep (k + l) a)) (kshift_diag' _ _) ≃
   --   @seq_colim (λk, P (rep k (rep l a))) (seq_diagram_of_over P (rep l a)) :=
@@ -389,15 +382,57 @@ set_option pp.binder_types true
     : transport (seq_colim_over g) (glue f a)⁻¹ x = to_inv (over_f_equiv g a) (shift_up _ x) :=
   ap10 (elim_type_glue_inv _ _ a) x
 
-  definition glue_over (p : P a) :
-    pathover (seq_colim_over g) (ιo g (g p)) (glue f a) (ι' _ 1 (g p)) :=
+  definition glue_over (p : P (f a)) : pathover (seq_colim_over g) (ιo g p) (glue f a) (ι' _ 1 p) :=
   pathover_of_tr_eq !seq_colim_over_glue
 
+  definition glue_over2 (p : P a) : pathover (seq_colim_over g) (ιo g (g p)) (glue f a) (ιo g p) :=
+  glue_over g (g p) ⬝op !glue
 
-  definition glue_over_gen (k : ℕ) (p : P (rep f k a)) :
-    pathover (seq_colim_over g) (ι' (seq_diagram_of_over g (f a)) k ((rep_f f k a)⁻¹ᵒ ▸o g p))
-             (glue f a)         (ι' (seq_diagram_of_over g a) (succ k) (g p)) :=
-  sorry
+  definition glue_over_gen (k : ℕ) (p : P (rep f k (f a))) :
+    pathover (seq_colim_over g) (ι (seq_diagram_of_over g (f a)) p)
+             (glue f a)         (ι (seq_diagram_of_over g a) (rep_f f k a ▸o p)) :=
+  begin
+    apply pathover_of_tr_eq,
+    apply seq_colim_over_glue
+  end
+
+  set_option pp.notation false
+  definition glue_over_rep_gen (k l : ℕ) (p : P (rep f k (rep f l a))) :
+    pathover (seq_colim_over g) (ι' _ k p) (rep_glue f l a)
+             (ι' _ (l + k) (rep_rep f k l a ▸o p)) :=
+  begin
+    revert k p, induction l with l IH: intro k p,
+    { apply pathover_idp_of_eq, refine (apo011 (ι' _) !nat.zero_add _)⁻¹, exact sorry}, -- easy
+    { esimp,
+      replace rep_glue f (succ l) a with glue f (rep f l a) ⬝ rep_glue f l a,
+      replace rep f (succ l) a with f (rep f l a),
+      refine !glue_over_gen ⬝o _,
+      refine !IH ⬝op _, clear IH,
+      refine (apo011 (ι' _) !nat.succ_add _)⁻¹,
+      refine _ ⬝op !my.cono_tro, exact sorry
+}
+  end
+
+  definition glue_over_rep_gen' (k l : ℕ) (p : P (rep f k (rep f l a))) :
+    pathover (seq_colim_over g) (ι' _ k p) (rep_glue f l a)
+             (ι' _ (k + l) (rep_rep' f k l a ▸o p)) :=
+  begin
+    revert k p, induction l with l IH: intro k p,
+    { constructor},
+    esimp,
+    replace rep_glue f (succ l) a with glue f (rep f l a) ⬝ rep_glue f l a,
+    replace rep f (succ l) a with f (rep f l a),
+    replace rep_rep' f k (succ l) a with
+            rep_f f k (rep f l a) ⬝o pathover_ap A succ (apo f (rep_rep' f k l a)),
+    refine !glue_over_gen ⬝o _,
+    refine !IH ⬝op _, clear IH,
+    refine _ ⬝ ap (ι' _ _) !my.cono_tro⁻¹ᵖ,
+    assert H : Πq, ι' (seq_diagram_of_over g a) (succ k + l) (transporto P (rep_rep' f (succ k) l a) q) =
+                   ι' (seq_diagram_of_over g a) (k + succ l) (transporto P (pathover_ap A succ (apo f (rep_rep' f k l a))) q),
+    { clear p, intro q, apply apo011 (ι' _) !nat.succ_add, exact sorry
+      },
+    apply H
+  end
 
   definition glue_over_rep (k : ℕ) (p : P (rep f k a)) :
     pathover (seq_colim_over g) (ιo g p) (rep_glue f k a) (ι' _ k p) :=
@@ -406,15 +441,23 @@ set_option pp.binder_types true
     { constructor},
     { change pathover (seq_colim_over g) (ιo g p)
                       (glue f (rep f k a) ⬝ rep_glue f k a) (ι' _ (succ k) p),
+      refine !glue_over ⬝o _,
       exact sorry
-      --refine !glue_over ⬝o _,
+      -- refine glue (seq_diagram_of_over g (rep f k a)) p,
+
+
 -- rewrite [↑seq_diagram_of_over,↑rep_glue],
 --       refine !pathover_tr ⬝o _,
       -- refine eq_concato !glue⁻¹ _, esimp,
       -- refine !glue_over⁻¹ᵒ ⬝o _,
-      -- exact sorry
+
     }
   end
+
+-- glue_over_rep g (succ k) (g p) ⬝o pathover_idp_of_eq
+--     (glue (seq_diagram_of_over g a) p) = glue_over g (g p) ⬝op glue
+--     (seq_diagram_of_over g (rep f k a))
+--     p ⬝o glue_over_rep g k p
 
   -- we can define a function from the colimit of total spaces to the total space of the colimit.
 
@@ -425,7 +468,7 @@ set_option pp.binder_types true
   { induction v with a p, exact ⟨ι f a, ιo g p⟩},
   { induction v with a p, esimp [seq_diagram_sigma], fapply sigma_eq,
       apply glue,
-      esimp, exact glue_over g p ⬝op glue _ p}
+      esimp, exact glue_over g (g p) ⬝op glue _ p}
   end
 
   -- we now want to show that this function is an equivalence.
@@ -566,13 +609,44 @@ set_option pp.binder_types true
     apply idp_con}
   end
 
+
+  definition square_dpair_eq_dpair {A : Type} {B : A → Type} {a₀₀ a₂₀ a₀₂ a₂₂ : A}
+    {p₁₀ : a₀₀ = a₂₀} {p₀₁ : a₀₀ = a₀₂} {p₂₁ : a₂₀ = a₂₂} {p₁₂ : a₀₂ = a₂₂}
+    (s₁₁ : square p₁₀ p₁₂ p₀₁ p₂₁) {b₀₀ : B a₀₀} {b₂₀ : B a₂₀} {b₀₂ : B a₀₂} {b₂₂ : B a₂₂}
+    {q₁₀ : b₀₀ =[p₁₀] b₂₀} {q₀₁ : b₀₀ =[p₀₁] b₀₂} {q₂₁ : b₂₀ =[p₂₁] b₂₂} {q₁₂ : b₀₂ =[p₁₂] b₂₂}
+    (t₁₁ : squareover B s₁₁ q₁₀ q₁₂ q₀₁ q₂₁) :
+    square (dpair_eq_dpair p₁₀ q₁₀) (dpair_eq_dpair p₁₂ q₁₂)
+           (dpair_eq_dpair p₀₁ q₀₁) (dpair_eq_dpair p₂₁ q₂₁) :=
+  by induction t₁₁; constructor
+
+
+  definition sigma_square {A : Type} {B : A → Type} {v₀₀ v₂₀ v₀₂ v₂₂ : Σa, B a}
+    {p₁₀ : v₀₀ = v₂₀} {p₀₁ : v₀₀ = v₀₂} {p₂₁ : v₂₀ = v₂₂} {p₁₂ : v₀₂ = v₂₂}
+    (s₁₁ : square p₁₀..1 p₁₂..1 p₀₁..1 p₂₁..1)
+    (t₁₁ : squareover B s₁₁ p₁₀..2 p₁₂..2 p₀₁..2 p₂₁..2) : square p₁₀ p₁₂ p₀₁ p₂₁ :=
+  begin
+    induction v₀₀, induction v₂₀, induction v₀₂, induction v₂₂,
+    rewrite [▸* at *, -sigma_eq_eta p₁₀, -sigma_eq_eta p₁₂, -sigma_eq_eta p₀₁, -sigma_eq_eta p₂₁],
+    exact square_dpair_eq_dpair s₁₁ t₁₁
+  end
+
   definition sigma_colim_of_colim_sigma_of_sigma_colim_constructor [unfold 7]
     (p : seq_colim_over g (ι f a)) :
     sigma_colim_of_colim_sigma g (colim_sigma_of_sigma_colim g ⟨ι f a, p⟩) = ⟨ι f a, p⟩ :=
   begin
     induction p with k p k p,
-    { apply sigma_eq (rep_glue f k a), esimp, apply (glue_over_rep g k p)},
-    { apply eq_pathover, esimp, exact sorry }
+    { apply sigma_eq (rep_glue f k a), esimp, exact glue_over_rep g k p},
+    { apply eq_pathover, esimp,
+      refine ap_compose (sigma_colim_of_colim_sigma g) _ _ ⬝ph _,
+      refine ap02 _ !elim_glue ⬝ph _,
+      refine !elim_glue ⬝ph _, esimp,
+      refine _ ⬝hp !ap_dpair⁻¹,
+      fapply square_dpair_eq_dpair,
+      { apply square_of_eq, reflexivity},
+      apply squareover_of_pathover,
+      apply pathover_idp_of_eq,
+      exact sorry
+    }
   end
 
   theorem sigma_colim_of_colim_sigma_of_sigma_colim (v : Σ(x : seq_colim f), seq_colim_over g x)

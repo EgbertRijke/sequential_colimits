@@ -18,6 +18,7 @@ variables {A A' : Type} {B B' : A → Type} {C : Π⦃a⦄, B a → Type}
     cast (apo011 P Ha Hb) p = Hb ▸o p :=
   by induction Hb; reflexivity
 
+  -- this replaces the definition in init.pathover?
   definition fn_tro_eq_tro_fn {C' : Π ⦃a : A⦄, B a → Type} (q : b =[p] b₂)
     (f : Π⦃a : A⦄ (b : B a), C b → C' b) (c : C b) : f b₂ (q ▸o c) = q ▸o (f b c) :=
   by induction q;reflexivity
@@ -61,8 +62,15 @@ variables {A A' : Type} {B B' : A → Type} {C : Π⦃a⦄, B a → Type}
   by induction q; reflexivity
 
   definition invo_tro_tro [constructor] {A : Type} {B : A → Type} (C : Π⦃a⦄, B a → Type)
-    {a a' : A} {p : a = a'} {b : B a} {b' : B a'} (q : b =[p] b') (c : C b) : q⁻¹ᵒ ▸o (q ▸o c) = c :=
+    {a a' : A} {p : a = a'} {b : B a} {b' : B a'} (q : b =[p] b') (c : C b) :
+    q⁻¹ᵒ ▸o (q ▸o c) = c :=
   by induction q; reflexivity
+
+  definition cono_tro [constructor] {A : Type} {B : A → Type} (C : Π⦃a⦄, B a → Type)
+    {a₁ a₂ a₃ : A} {p₁ : a₁ = a₂} {p₂ : a₂ = a₃} {b₁ : B a₁} {b₂ : B a₂} {b₃ : B a₃}
+    (q₁ : b₁ =[p₁] b₂) (q₂ : b₂ =[p₂] b₃) (c : C b₁) :
+    transporto C (q₁ ⬝o q₂) c = transporto C q₂ (transporto C q₁ c) :=
+  by induction q₂; reflexivity
 
   definition is_equiv_transporto [constructor] {A : Type} {B : A → Type} (C : Π⦃a⦄, B a → Type)
     {a a' : A} {p : a = a'} {b : B a} {b' : B a'} (q : b =[p] b') : is_equiv (transporto C q) :=
