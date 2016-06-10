@@ -84,6 +84,7 @@ variables {A A' : Type} {B B' : A → Type} {C : Π⦃a⦄, B a → Type}
   attribute eq.inv_inv [unfold 4]
   attribute idp_rec_on [unfold 7]
   attribute adjointify_left_inv' [unfold_full]
+  -- reorder arguments to make consistent with natural_square
   definition natural_square011 {A A' : Type} {B : A → Type}
     {a a' : A} {p : a = a'} {b : B a} {b' : B a'} (q : b =[p] b')
     {l r  : Π⦃a⦄, B a → A'} (g : Π⦃a⦄ (b : B a), l b = r b)

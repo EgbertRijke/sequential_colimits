@@ -7,6 +7,17 @@ import hit.colimit .sequence cubical.squareover types.arrow .move_to_lib types.e
 
 open eq nat sigma sigma.ops quotient equiv pi is_trunc is_equiv fiber function
 
+--   local attribute is_equiv_compose [reducible]
+--   definition right_inv_compose {A B C : Type} (g : B → C) (f : A → B) [is_equiv g] [is_equiv f]
+--     /-(H : is_equiv (g ∘ f))-/ (c : C) :
+--     @(right_inv (g ∘ f)) !is_equiv_compose c =
+--     ap g (right_inv f (g⁻¹ c)) ⬝ right_inv g c :=
+-- --ap g (right_inv f (g⁻¹ c)) ⬝
+--   _
+-- -- exit
+
+
+
 namespace seq_colim
 
   -- note: this clashes with the abbreviation defined in namespace "colimit"
@@ -22,6 +33,12 @@ namespace seq_colim
     { exact glue f (rep0 f k a) ⬝ IH}
   end
 
+  -- probably not needed
+  -- definition rep0_back_glue [is_equiseq f] (k : ℕ) (a : A k) : ι f (rep0_back f k a) = ι f a :=
+  -- begin
+  --   exact sorry
+  -- end
+
   definition colim_back [unfold 4] [H : is_equiseq f] : seq_colim f → A 0 :=
   begin
     intro x,
@@ -30,9 +47,29 @@ namespace seq_colim
     rexact ap (rep0_back f k) (left_inv (@f k) a),
   end
 
+set_option pp.binder_types true
+
+  -- move to cubical.square
+  definition dconcat {A : Type} {a₀₀ a₂₀ a₀₂ a₂₂ a₁₁ : A} {p₁₀ : a₀₀ = a₂₀} {p₀₁ : a₀₀ = a₀₂}
+  {p₂₁ : a₂₀ = a₂₂} {p₁₂ : a₀₂ = a₂₂} {p₀₀ : a₀₀ = a₁₁} {p₂₂ : a₁₁ = a₂₂}
+  (s₂₁ : square p₀₀ p₁₂ p₀₁ p₂₂) (s₁₂ : square p₁₀ p₂₂ p₀₀ p₂₁) : square p₁₀ p₁₂ p₀₁ p₂₁ :=
+  by induction s₁₂; exact s₂₁
+
+  definition inv_homotopy_inv_of_homotopy {A B : Type} (f g : A → B) (p : f ~ g)
+    [is_equiv f] [is_equiv g] : f⁻¹ ~ g⁻¹ :=
+  λa, ap f⁻¹ ((right_inv g a)⁻¹ ⬝ (p (g⁻¹ a))⁻¹) ⬝ left_inv f (g⁻¹ a)
+
+  definition right_inv_compose {A B C : Type} (g : B → C) (f : A → B) (h : A → C)
+    (p : h ~ g ∘ f) (c : C) [is_equiv g] [is_equiv f] [is_equiv h] :
+    right_inv h c = (p (h⁻¹ c)) ⬝
+    ap g (ap f proof @(inv_homotopy_inv_of_homotopy h (g ∘ f) p) _ !is_equiv_compose c qed ⬝ right_inv f (g⁻¹ c)) ⬝
+    right_inv g c :=
+  sorry
+
   section
-  local attribute is_equiv_rep0 [instance] [priority 500]
-  definition is_equiv_ι (H : is_equiseq f) : is_equiv (@ι A f 0) :=
+  local attribute is_equiv_rep0 [instance] --[priority 500]
+  set_option trace.class_instances true
+  definition is_equiv_ι (H : is_equiseq f) : is_equiv (ι' f 0) :=
   begin
     fapply adjointify,
     { exact colim_back f},
@@ -42,7 +79,20 @@ namespace seq_colim
         exact ap (ι f) (right_inv (rep0 f k) a)},
       apply eq_pathover_id_right,
       refine (ap_compose (ι f) (colim_back f) _) ⬝ph _,
-      refine ap02 _ !elim_glue ⬝ph _, exact sorry},
+      refine ap02 _ _ ⬝ph _, rotate 1,
+      { rexact elim_glue f _ _ a},
+      refine _ ⬝pv ((natural_square_tr (rep0_glue f k)
+                                       (ap (rep0_back f k) (left_inv (@f k) a)))⁻¹ʰ ⬝h _),
+      { exact (glue f (rep0 f k (rep0_back f (succ k) (f a))))⁻¹ ⬝
+              ap (ι f) (right_inv (rep0 f (succ k)) (f a))},
+      { rewrite [-con.assoc, -con_inv]},
+      refine !ap_compose⁻¹ ⬝ ap_compose (ι f) _ _ ⬝ph _,
+      refine dconcat (aps (ι' f k) (natural_square_tr (right_inv (rep0 f k))
+                                                      (left_inv (@f _) a))) _,
+      apply move_top_of_left, apply move_left_of_bot,
+      refine ap02 _ (whisker_left _ (adj (@f _) a)) ⬝pv _,
+      rewrite [-+ap_con, -ap_compose', ap_id],
+      apply natural_square},
     intro a,
     reflexivity,
   end
@@ -575,7 +625,7 @@ namespace seq_colim
   -- include g
 
   -- definition Sincl (v : Σ(x : A n), P x) : Σ(x : seq_colim A), seq_colim_over P x :=
-  -- ⟨ι v.1, @ι _ _ 0 v.2⟩
+  -- ⟨ι v.1, ι' _ 0 v.2⟩
 
   -- definition Sglue (v : Σ(x : A n), P x) : Sincl P (seq_diagram_sigma P v) = Sincl P v :=
   -- sigma_eq !glue (!glue_over ⬝op glue v.2)

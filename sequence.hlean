@@ -42,33 +42,59 @@ namespace seq_colim
       exact f x
   end
 
-  definition rep0_back [H : is_equiseq f] (k : ℕ) : A k → A 0 :=
-  begin
-    induction k with k IH: intro a,
-    exact a,
-    exact (IH ((@f k)⁻¹ a)),
-  end
+  -- definition rep0_back [H : is_equiseq f] (k : ℕ) : A k → A 0 :=
+  -- begin
+  --   induction k with k IH: intro a,
+  --   exact a,
+  --   exact (IH ((@f k)⁻¹ a)),
+  -- end
+
+  --TODO: make arguments of inv_homotopy_closed explicit
+  -- definition is_equiv_rep0 [constructor] [H : is_equiseq f] (k : ℕ) :
+  --   is_equiv (rep0 f k) :=
+  -- begin
+  --   fapply @inv_homotopy_closed,
+  --   { exact rep0_back f k},
+  --   { induction k with k IH,
+  --     { apply is_equiv_id},
+  --     { apply is_equiv_compose (rep0 f k) (@f _)}},
+  --   { induction k with k IH: intro a,
+  --     { reflexivity},
+  --     { apply IH}}
+  -- end
 
   definition is_equiv_rep0 [constructor] [H : is_equiseq f] (k : ℕ) :
     is_equiv (rep0 f k) :=
   begin
-    fapply adjointify,
-    { exact rep0_back f k},
-    { induction k with k IH: intro b,
-      { reflexivity},
-      unfold rep0,
-      unfold rep0_back,
-      fold [rep0 f k (rep0_back f k ((@f k)⁻¹ b))],
-      refine ap (@f k) (IH ((@f k)⁻¹ b)) ⬝ _,
-      apply right_inv (@f k)},
-    induction k with k IH: intro b,
-    exact rfl,
-    unfold rep0_back,
-    unfold rep0,
-    fold [rep0 f k b],
-    refine _ ⬝ IH b,
-    exact ap (rep0_back f k) (left_inv (@f k) (rep0 f k b))
+    induction k with k IH,
+    { apply is_equiv_id},
+    { apply is_equiv_compose (rep0 f k) (@f _)},
   end
+
+  local attribute is_equiv_rep0 [instance]
+  definition rep0_back [reducible] [H : is_equiseq f] (k : ℕ) : A k → A 0 :=
+  (rep0 f k)⁻¹
+
+  -- definition is_equiv_rep0 [constructor] [H : is_equiseq f] (k : ℕ) :
+  --   is_equiv (rep0 f k) :=
+  -- begin
+  --   fapply adjointify,
+  --   { exact rep0_back f k},
+  --   { induction k with k IH: intro b,
+  --     { reflexivity},
+  --     unfold rep0,
+  --     unfold rep0_back,
+  --     fold [rep0 f k (rep0_back f k ((@f k)⁻¹ b))],
+  --     refine ap (@f k) (IH ((@f k)⁻¹ b)) ⬝ _,
+  --     apply right_inv (@f k)},
+  --   induction k with k IH: intro b,
+  --   exact rfl,
+  --   unfold rep0_back,
+  --   unfold rep0,
+  --   fold [rep0 f k b],
+  --   refine _ ⬝ IH b,
+  --   exact ap (rep0_back f k) (left_inv (@f k) (rep0 f k b))
+  -- end
 
   section generalized_rep
   variable {n : ℕ}
