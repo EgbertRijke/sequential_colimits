@@ -67,7 +67,7 @@ namespace seq_colim
   --   { exact rep0_back f k},
   --   { induction k with k IH,
   --     { apply is_equiv_id},
-  --     { apply is_equiv_compose (rep0 f k) (@f _)}},
+  --     { apply is_equiv_compose (@f _) (rep0 f k)}},
   --   { induction k with k IH: intro a,
   --     { reflexivity},
   --     { apply IH}}
@@ -78,7 +78,7 @@ namespace seq_colim
   begin
     induction k with k IH,
     { apply is_equiv_id},
-    { apply is_equiv_compose (rep0 f k) (@f _)},
+    { apply is_equiv_compose (@f _) (rep0 f k)},
   end
 
   local attribute is_equiv_rep0 [instance]
@@ -253,11 +253,11 @@ print nat.add_assoc
 
     theorem rep_f_equiv [constructor] (a : A n) (k : ℕ) :
       P (rep f k (f a)) ≃ P (rep f (succ k) a) :=
-    my.equiv_apd011 P (rep_f f k a)
+    equiv_apd011 P (rep_f f k a)
 
     theorem rep_rep_equiv [constructor] (a : A n) (k l : ℕ) :
       P (rep f (l + k) a) ≃ P (rep f k (rep f l a)) :=
-    (my.equiv_apd011 P (rep_rep f k l a))⁻¹ᵉ
+    (equiv_apd011 P (rep_rep f k l a))⁻¹ᵉ
 
   end over
 
