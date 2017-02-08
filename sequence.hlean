@@ -6,7 +6,7 @@ Authors: Floris van Doorn, Egbert Rijke
 
 import types.nat .move_to_lib types.fin
 
-open nat eq equiv sigma sigma.ops is_equiv
+open nat eq equiv sigma sigma.ops is_equiv is_trunc
 
   -- MOVE
   definition idontwanttoprovethis (n l k : ℕ) :
@@ -17,7 +17,7 @@ open nat eq equiv sigma sigma.ops is_equiv
     induction k with k IH,
     { reflexivity},
     { esimp, refine _ ⬝ ap02 succ IH,
-      exact sorry}
+      apply is_prop.elim }
   end
 
 
@@ -112,7 +112,7 @@ namespace seq_colim
   definition rep [reducible] (k : ℕ) (a : A n) : A (n + k) :=
   by induction k with k x; exact a; exact f x
 
-  definition rep_f (k : ℕ) (a : A n) : rep f k (f a) =[succ_add n k] rep f (succ k) a :=
+  definition rep_f (k : ℕ) (a : A n) : pathover A (rep f k (f a)) (succ_add n k) (rep f (succ k) a) :=
   begin
     induction k with k IH,
     { constructor},
@@ -148,7 +148,7 @@ namespace seq_colim
   end
 
   definition rep_rep (k l : ℕ) (a : A n) :
-    rep f k (rep f l a) =[nat.add_assoc n l k] rep f (l + k) a :=
+    pathover A (rep f k (rep f l a)) (nat.add_assoc n l k) (rep f (l + k) a) :=
   begin
     induction k with k IH,
     { constructor},
@@ -175,14 +175,14 @@ print nat.add_assoc
 
   -- old: don't use
   definition rep_rep' (k l : ℕ) (a : A n) :
-    rep f k (rep f l a) =[nat.add_add n l k] rep f (k + l) a :=
+    pathover A (rep f k (rep f l a)) (nat.add_add n l k) (rep f (k + l) a) :=
   begin
     induction l with l IH,
     { constructor},
-    { rewrite [▸rep f k (f (rep f l a)) =[ succ_add (n + l) k ⬝ ap succ (nat.add_add n l k)]
-                f (rep f (k + l) a)],
+    { rewrite [▸pathover A (rep f k (f (rep f l a))) (succ_add (n + l) k ⬝ ap succ (nat.add_add n l k))
+                (f (rep f (k + l) a))],
       refine rep_f f k (rep f l a) ⬝o _,
-      rewrite [▸f (rep f k (rep f l a)) =[ ap succ (nat.add_add n l k) ] f (rep f (k + l) a)],
+      rewrite [▸pathover A (f (rep f k (rep f l a))) (ap succ (nat.add_add n l k)) (f (rep f (k + l) a))],
       apply pathover_ap, exact apo f IH}
   end
 

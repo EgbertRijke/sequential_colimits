@@ -68,18 +68,18 @@ set_option pp.binder_types true
       refine (ap_compose (ι f) (colim_back f) _) ⬝ph _,
       refine ap02 _ _ ⬝ph _, rotate 1,
       { rexact elim_glue f _ _ a},
-      refine _ ⬝pv ((natural_square_tr (rep0_glue f k)
-                                       (ap (rep0_back f k) (left_inv (@f k) a)))⁻¹ʰ ⬝h _),
+      refine _ ⬝pv ((natural_square (rep0_glue f k)
+                                    (ap (rep0_back f k) (left_inv (@f k) a)))⁻¹ʰ ⬝h _),
       { exact (glue f (rep0 f k (rep0_back f (succ k) (f a))))⁻¹ ⬝
               ap (ι f) (right_inv (rep0 f (succ k)) (f a))},
       { rewrite [-con.assoc, -con_inv]},
       refine !ap_compose⁻¹ ⬝ ap_compose (ι f) _ _ ⬝ph _,
-      refine dconcat (aps (ι' f k) (natural_square_tr (right_inv (rep0 f k))
-                                                      (left_inv (@f _) a))) _,
+      refine dconcat (aps (ι' f k) (natural_square (right_inv (rep0 f k))
+                                                   (left_inv (@f _) a))) _,
       apply move_top_of_left, apply move_left_of_bot,
       refine ap02 _ (whisker_left _ (adj (@f _) a)) ⬝pv _,
       rewrite [-+ap_con, -ap_compose', ap_id],
-      apply natural_square},
+      apply natural_square_tr},
     intro a,
     reflexivity,
   end
