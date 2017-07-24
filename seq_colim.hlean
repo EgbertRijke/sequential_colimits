@@ -457,20 +457,19 @@ set_option pp.binder_types true
 
 /-
   dictionary:
-  U = rep_f_equiv : P (n+1+k, rep f k (f x)) ≃ P (n+k+1, rep f (k+1) x)
-  κ = glue
-  F = over_f_equiv g a ⬝e (shift_equiv (λk, P (rep f k a)) (seq_diagram_of_over g a))⁻¹ᵉ
-  F* = Fs = (something similar to elim_type_glue)
-  δ = rep_f_equiv_natural
-  variables names
   Kristina | Lean
-  A, P, k, n are the same
-  x : A n | a : A n
-  a : A n → A (n+1) | f : A n → A (n+1)
-  y : P n x | x : P n a (maybe other variables)
-  f : P n x → P (n+1) (a n x) | g : P n a → P (n+1) (f n a)
-
+  VARIABLE NAMES (A, P, k, n are the same)
+  x : A_n | a : A n
+  a : A_n → A_{n+1} | f : A n → A (n+1)
+  y : P(n, x) | x : P a (maybe other variables)
+  f : P(n, x) → P(n+1, a_n x) | g : P a → P (f a)
+  DEFINITION NAMES
+  κ | glue
+  U | rep_f_equiv : P (n+1+k, rep f k (f x)) ≃ P (n+k+1, rep f (k+1) x)
+  δ | rep_f_equiv_natural
+  F | over_f_equiv g a ⬝e (shift_equiv (λk, P (rep f k a)) (seq_diagram_of_over g a))⁻¹ᵉ
 -/
+
   definition Kristina_dpath {t₁ t₂ : seq_colim f} (α : t₁ = t₂) (F : seq_colim_over g t₁ → seq_colim_over g t₂)
     (Fs : transport (seq_colim_over g) α = F) (p : seq_colim_over g t₁) : ⟨t₁, p⟩ = ⟨t₂, F p⟩ :=
   begin
