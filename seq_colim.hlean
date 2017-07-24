@@ -98,14 +98,14 @@ set_option pp.binder_types true
   definition shift_up [unfold 3] (x : seq_colim f) : seq_colim (shift_diag f) :=
   begin
     induction x,
-    { exact ι _ (f a)},
-    { exact glue _ (f a)}
+    { exact ι' (shift_diag f) n (f a)},
+    { exact glue (shift_diag f) (f a)}
   end
 
   definition shift_down [unfold 3] (x : seq_colim (shift_diag f)) : seq_colim f :=
   begin
     induction x,
-    { exact ι f a},
+    { exact ι' f (n+1) a},
     { exact glue f a}
   end
 
@@ -320,7 +320,7 @@ set_option pp.binder_types true
   begin
     refine seq_colim.elim_type f _ _ x,
     { intro n a, exact seq_colim (seq_diagram_of_over g a)},
-    { intro n a, refine !over_f_equiv ⬝e !shift_equiv⁻¹ᵉ}
+    { intro n a, refine over_f_equiv g a ⬝e (shift_equiv (λk, P (rep f k a)) (seq_diagram_of_over g a))⁻¹ᵉ}
   end
   omit g
 
@@ -459,7 +459,7 @@ set_option pp.binder_types true
   dictionary:
   U = rep_f_equiv : P (n+1+k, rep f k (f x)) ≃ P (n+k+1, rep f (k+1) x)
   κ = glue
-  F
+  F = over_f_equiv g a ⬝e (shift_equiv (λk, P (rep f k a)) (seq_diagram_of_over g a))⁻¹ᵉ
   F* = Fs = (something similar to elim_type_glue)
   δ = rep_f_equiv_natural
   variables names
@@ -479,20 +479,16 @@ set_option pp.binder_types true
 
   definition Kristina_F [unfold 7] (x : seq_colim_over g (ι f (f a))) : seq_colim_over g (ι f a) :=
   begin
-    induction x with k x k x,
-    { exact ι' (seq_diagram_of_over g a) (k+1) (rep_f_equiv f P a k x) },
-    { refine ap (ι' _ _) (rep_f_equiv_natural g x) ⬝ glue (seq_diagram_of_over g a) (rep_f f k a ▸o x) }
+    exact (over_f_equiv g a ⬝e (shift_equiv (λk, P (rep f k a)) (seq_diagram_of_over g a))⁻¹ᵉ) x
   end
 
   definition Kristina_F_def (x : seq_colim_over g (ι f (f a))) :
     transport (seq_colim_over g) (glue f a) x = Kristina_F g x :=
   begin
-    induction x with k x k x,
-    { exact sorry },
-    { exact sorry }
+    exact seq_colim_over_glue g x
   end
 
-  definition Kristina_gs {E : (Σ(x : seq_colim f), seq_colim_over g x) → Type}
+  definition Kristina_gs /- g_* -/ {E : (Σ(x : seq_colim f), seq_colim_over g x) → Type}
     (e : Πn (a : A n) (y : P a), E ⟨ι f a, ιo g y⟩) {k : ℕ} : Π {n : ℕ} {a : A n} (y : P (rep f k a)),
     E ⟨ι f a, ι (seq_diagram_of_over g a) y⟩ :=
   begin
@@ -502,7 +498,9 @@ set_option pp.binder_types true
       refine equiv_rect (rep_f_equiv f P a k) _ _,
       intro z, refine transport E _ (IH z),
       refine Kristina_dpath g (glue f a) (Kristina_F g) _ (ι (seq_diagram_of_over g (f a)) z),
-      apply eq_of_homotopy, apply Kristina_F_def }
+      apply elim_type_glue
+--      apply eq_of_homotopy, exact seq_colim_over_glue g -- this can replace the last step, if wanted
+      }
   end
 
   definition Kristina_g {E : (Σ(x : seq_colim f), seq_colim_over g x) → Type}
