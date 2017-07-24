@@ -346,9 +346,6 @@ set_option pp.binder_types true
   theorem seq_colim_over_glue (x : seq_colim_over g (ι f (f a)))
     : transport (seq_colim_over g) (glue f a) x = shift_down _ (over_f_equiv g a x) :=
   ap10 (elim_type_glue _ _ _ a) x
-  -- REPORT: in the preceding proof, the following gives error:
-  --   by exact ap10 (elim_type_glue _ _ _ a) x
-  -- changing ap10 to ap10.{v v} resolves the error
 
   theorem seq_colim_over_glue_inv (x : seq_colim_over g (ι f a))
     : transport (seq_colim_over g) (glue f a)⁻¹ x = to_inv (over_f_equiv g a) (shift_up _ x) :=
@@ -368,7 +365,7 @@ set_option pp.binder_types true
     apply seq_colim_over_glue
   end
 
-  set_option pp.notation false
+--  set_option pp.notation false
   definition glue_over_rep_gen (k l : ℕ) (p : P (rep f k (rep f l a))) :
     pathover (seq_colim_over g) (ι' _ k p) (rep_glue f l a)
              (ι' _ (l + k) (rep_rep f k l a ▸o p)) :=
@@ -444,6 +441,90 @@ set_option pp.binder_types true
   end
 
   -- we now want to show that this function is an equivalence.
+
+  /- Kristina's work -/
+
+  open sigma
+
+  definition glue' (x : P a) : ⟨ι f (f a), ιo g (g x)⟩ = ⟨ι f a, ιo g x⟩ :> sigma (seq_colim_over g) :=
+  begin
+    apply dpair_eq_dpair (glue f a),
+    apply pathover_of_tr_eq,
+    refine seq_colim_over_glue g (ιo g (g x)) ⬝ _,
+    exact glue (seq_diagram_of_over g a) x
+  end
+--glue f a ▸ ιo g (g x) = ι (seq_diagram_of_over g a) (g x) = ιo g x
+
+/-
+  dictionary:
+  U = rep_f_equiv : P (n+1+k, rep f k (f x)) ≃ P (n+k+1, rep f (k+1) x)
+  κ = glue
+  F
+  F* = Fs = (something similar to elim_type_glue)
+  δ = rep_f_equiv_natural
+  variables names
+  Kristina | Lean
+  A, P, k, n are the same
+  x : A n | a : A n
+  a : A n → A (n+1) | f : A n → A (n+1)
+  y : P n x | x : P n a (maybe other variables)
+  f : P n x → P (n+1) (a n x) | g : P n a → P (n+1) (f n a)
+
+-/
+  definition Kristina_dpath {t₁ t₂ : seq_colim f} (α : t₁ = t₂) (F : seq_colim_over g t₁ → seq_colim_over g t₂)
+    (Fs : transport (seq_colim_over g) α = F) (p : seq_colim_over g t₁) : ⟨t₁, p⟩ = ⟨t₂, F p⟩ :=
+  begin
+    induction α, induction Fs, reflexivity
+  end
+
+  definition Kristina_F [unfold 7] (x : seq_colim_over g (ι f (f a))) : seq_colim_over g (ι f a) :=
+  begin
+    induction x with k x k x,
+    { exact ι' (seq_diagram_of_over g a) (k+1) (rep_f_equiv f P a k x) },
+    { refine ap (ι' _ _) (rep_f_equiv_natural g x) ⬝ glue (seq_diagram_of_over g a) (rep_f f k a ▸o x) }
+  end
+
+  definition Kristina_F_def (x : seq_colim_over g (ι f (f a))) :
+    transport (seq_colim_over g) (glue f a) x = Kristina_F g x :=
+  begin
+    induction x with k x k x,
+    { exact sorry },
+    { exact sorry }
+  end
+
+  definition Kristina_gs {E : (Σ(x : seq_colim f), seq_colim_over g x) → Type}
+    (e : Πn (a : A n) (y : P a), E ⟨ι f a, ιo g y⟩) {k : ℕ} : Π {n : ℕ} {a : A n} (y : P (rep f k a)),
+    E ⟨ι f a, ι (seq_diagram_of_over g a) y⟩ :=
+  begin
+    induction k with k IH: intro n a x,
+    { exact e n a x },
+    { revert x,
+      refine equiv_rect (rep_f_equiv f P a k) _ _,
+      intro z, refine transport E _ (IH z),
+      refine Kristina_dpath g (glue f a) (Kristina_F g) _ (ι (seq_diagram_of_over g (f a)) z),
+      apply eq_of_homotopy, apply Kristina_F_def }
+  end
+
+  definition Kristina_g {E : (Σ(x : seq_colim f), seq_colim_over g x) → Type}
+    (H : Πn (x : A n) (y : P x), E ⟨ι f x, ιo g y⟩) {n : ℕ} {x : A n} (p : seq_colim_over g (ι f x)) :
+    E ⟨ι f x, p⟩ :=
+  begin
+    induction p with k y,
+    { exact Kristina_gs g H y },
+    { exact sorry }
+  end
+
+  definition sigma_colim_rec {E : (Σ(x : seq_colim f), seq_colim_over g x) → Type}
+    (e : Π⦃n⦄ ⦃x : A n⦄ (y : P x), E ⟨ι f x, ιo g y⟩)
+    (K : Π⦃n⦄ ⦃x : A n⦄ (y : P x), pathover E (e (g y)) (glue' g y) (e y))
+    (v : Σ(x : seq_colim f), seq_colim_over g x) : E v :=
+  begin
+    induction v with x p,
+    induction x with n x,
+    { exact Kristina_g g e p },
+    { exact sorry }
+  end
+
 
   /- ATTEMPT 1: show that this function has contractible fibers -/
   theorem is_equiv_sigma_colim_of_colim_sigma : is_equiv (sigma_colim_of_colim_sigma g) :=

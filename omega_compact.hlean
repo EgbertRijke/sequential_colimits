@@ -60,7 +60,7 @@ namespace seq_colim
         refine ap_compose' (seq_colim.elim _ _ _) _ _ ⬝ph _,
         refine ap02 _ !elim_glue ⬝ph _,
         refine !elim_glue ⬝ph _,
-        refine _ ⬝pv natural_square (@glue _ (seq_diagram_arrow_left f unit) n) (unit_arrow_eq h),
+        refine _ ⬝pv natural_square_tr (@glue _ (seq_diagram_arrow_left f unit) n) (unit_arrow_eq h),
         refine _ ⬝ (ap_compose (ι' _ _) _ _)⁻¹,
         apply ap02, unfold [seq_diagram_arrow_left],
         apply unit_arrow_eq_compose}}
