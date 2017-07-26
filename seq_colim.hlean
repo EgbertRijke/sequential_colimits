@@ -4,9 +4,11 @@ Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Floris van Doorn, Egbert Rijke
 -/
 import hit.colimit .sequence cubical.squareover types.arrow .move_to_lib types.equiv
-       cubical.pathover2
+       cubical.pathover2 .squareover
 
 open eq nat sigma sigma.ops quotient equiv pi is_trunc is_equiv fiber function
+
+attribute tro_invo_tro [unfold 9] -- TODO: move
 
 --   local attribute is_equiv_compose [reducible]
 --   definition right_inv_compose {A B C : Type} (g : B → C) (f : A → B) [is_equiv g] [is_equiv f]
@@ -313,6 +315,10 @@ set_option pp.binder_types true
   definition over_f_equiv [constructor] :
     seq_colim (seq_diagram_of_over g (f a)) ≃ seq_colim (shift_diag (seq_diagram_of_over g a)) :=
   seq_colim_equiv (rep_f_equiv f P a) (λk p, rep_f_equiv_natural g p)
+
+  definition seq_colim_over_equiv :
+    seq_colim (seq_diagram_of_over g (f a)) ≃ seq_colim (seq_diagram_of_over g a) :=
+  over_f_equiv g a ⬝e (shift_equiv (λk, P (rep f k a)) (seq_diagram_of_over g a))⁻¹ᵉ
   variable {a}
 
   include g
@@ -320,7 +326,7 @@ set_option pp.binder_types true
   begin
     refine seq_colim.elim_type f _ _ x,
     { intro n a, exact seq_colim (seq_diagram_of_over g a)},
-    { intro n a, refine over_f_equiv g a ⬝e (shift_equiv (λk, P (rep f k a)) (seq_diagram_of_over g a))⁻¹ᵉ}
+    { intro n a, exact seq_colim_over_equiv g a }
   end
   omit g
 
@@ -341,7 +347,6 @@ set_option pp.binder_types true
   --     rewrite [apo_invo,apo_tro]
   --   end) end
 
-
   variable {P}
   theorem seq_colim_over_glue (x : seq_colim_over g (ι f (f a)))
     : transport (seq_colim_over g) (glue f a) x = shift_down _ (over_f_equiv g a x) :=
@@ -353,80 +358,6 @@ set_option pp.binder_types true
 
   definition glue_over (p : P (f a)) : pathover (seq_colim_over g) (ιo g p) (glue f a) (ι' _ 1 p) :=
   pathover_of_tr_eq !seq_colim_over_glue
-
-  definition glue_over2 (p : P a) : pathover (seq_colim_over g) (ιo g (g p)) (glue f a) (ιo g p) :=
-  glue_over g (g p) ⬝op !glue
-
-  definition glue_over_gen (k : ℕ) (p : P (rep f k (f a))) :
-    pathover (seq_colim_over g) (ι (seq_diagram_of_over g (f a)) p)
-             (glue f a)         (ι (seq_diagram_of_over g a) (rep_f f k a ▸o p)) :=
-  begin
-    apply pathover_of_tr_eq,
-    apply seq_colim_over_glue
-  end
-
---  set_option pp.notation false
-  definition glue_over_rep_gen (k l : ℕ) (p : P (rep f k (rep f l a))) :
-    pathover (seq_colim_over g) (ι' _ k p) (rep_glue f l a)
-             (ι' _ (l + k) (rep_rep f k l a ▸o p)) :=
-  begin
-    revert k p, induction l with l IH: intro k p,
-    { apply pathover_idp_of_eq, refine (apd011 (ι' _) !nat.zero_add _)⁻¹, exact sorry}, -- easy
-    { esimp,
-      replace rep_glue f (succ l) a with glue f (rep f l a) ⬝ rep_glue f l a,
-      replace rep f (succ l) a with f (rep f l a),
-      refine !glue_over_gen ⬝o _,
-      refine !IH ⬝op _, clear IH,
-      refine (apd011 (ι' _) !nat.succ_add _)⁻¹,
-      refine _ ⬝op !cono_tro, exact sorry
-}
-  end
-
-  definition glue_over_rep_gen' (k l : ℕ) (p : P (rep f k (rep f l a))) :
-    pathover (seq_colim_over g) (ι' _ k p) (rep_glue f l a)
-             (ι' _ (k + l) (rep_rep' f k l a ▸o p)) :=
-  begin
-    revert k p, induction l with l IH: intro k p,
-    { constructor},
-    esimp,
-    replace rep_glue f (succ l) a with glue f (rep f l a) ⬝ rep_glue f l a,
-    replace rep f (succ l) a with f (rep f l a),
-    replace rep_rep' f k (succ l) a with
-            rep_f f k (rep f l a) ⬝o pathover_ap A succ (apo f (rep_rep' f k l a)),
-    refine !glue_over_gen ⬝o _,
-    refine !IH ⬝op _, clear IH,
-    refine _ ⬝ ap (ι' _ _) !cono_tro⁻¹ᵖ,
-    assert H : Πq, ι' (seq_diagram_of_over g a) (succ k + l) (transporto P (rep_rep' f (succ k) l a) q) =
-                   ι' (seq_diagram_of_over g a) (k + succ l) (transporto P (pathover_ap A succ (apo f (rep_rep' f k l a))) q),
-    { clear p, intro q, apply apd011 (ι' _) !nat.succ_add, exact sorry
-      },
-    apply H
-  end
-
-  definition glue_over_rep (k : ℕ) (p : P (rep f k a)) :
-    pathover (seq_colim_over g) (ιo g p) (rep_glue f k a) (ι' _ k p) :=
-  begin
-    revert a p, induction k with k IH, all_goals intro a p,
-    { constructor},
-    { change pathover (seq_colim_over g) (ιo g p)
-                      (glue f (rep f k a) ⬝ rep_glue f k a) (ι' _ (succ k) p),
-      refine !glue_over ⬝o _,
-      exact sorry
-      -- refine glue (seq_diagram_of_over g (rep f k a)) p,
-
-
--- rewrite [↑seq_diagram_of_over,↑rep_glue],
---       refine !pathover_tr ⬝o _,
-      -- refine eq_concato !glue⁻¹ _, esimp,
-      -- refine !glue_over⁻¹ᵒ ⬝o _,
-
-    }
-  end
-
--- glue_over_rep g (succ k) (g p) ⬝o pathover_idp_of_eq
---     (glue (seq_diagram_of_over g a) p) = glue_over g (g p) ⬝op glue
---     (seq_diagram_of_over g (rep f k a))
---     p ⬝o glue_over_rep g k p
 
   -- we can define a function from the colimit of total spaces to the total space of the colimit.
 
@@ -442,23 +373,14 @@ set_option pp.binder_types true
 
   -- we now want to show that this function is an equivalence.
 
-  /- Kristina's work -/
+  /- Kristina's proof of the induction principle of colim-sigma for sigma-colim -/
 
   open sigma
-
-  definition glue' (x : P a) : ⟨ι f (f a), ιo g (g x)⟩ = ⟨ι f a, ιo g x⟩ :> sigma (seq_colim_over g) :=
-  begin
-    apply dpair_eq_dpair (glue f a),
-    apply pathover_of_tr_eq,
-    refine seq_colim_over_glue g (ιo g (g x)) ⬝ _,
-    exact glue (seq_diagram_of_over g a) x
-  end
---glue f a ▸ ιo g (g x) = ι (seq_diagram_of_over g a) (g x) = ιo g x
 
 /-
   dictionary:
   Kristina | Lean
-  VARIABLE NAMES (A, P, k, n are the same)
+  VARIABLE NAMES (A, P, k, n, e, w are the same)
   x : A_n | a : A n
   a : A_n → A_{n+1} | f : A n → A (n+1)
   y : P(n, x) | x : P a (maybe other variables)
@@ -470,84 +392,193 @@ set_option pp.binder_types true
   F | over_f_equiv g a ⬝e (shift_equiv (λk, P (rep f k a)) (seq_diagram_of_over g a))⁻¹ᵉ
 -/
 
-  definition Kristina_dpath {t₁ t₂ : seq_colim f} (α : t₁ = t₂) (F : seq_colim_over g t₁ → seq_colim_over g t₂)
-    (Fs : transport (seq_colim_over g) α = F) (p : seq_colim_over g t₁) : ⟨t₁, p⟩ = ⟨t₂, F p⟩ :=
-  begin
-    induction α, induction Fs, reflexivity
-  end
+/- the special case of "dpath" we use in the proof -/
+definition Kristina_dpath (k : ℕ) (x : P (rep f k (f a))) :
+  ⟨ι f (f a), ι (seq_diagram_of_over g (f a)) x⟩ =
+  ⟨ι f a, ι (seq_diagram_of_over g a) (to_fun (rep_f_equiv f P a k) x)⟩
+  :> sigma (seq_colim_over g) :=
+begin
+  apply dpair_eq_dpair (glue f a),
+  apply pathover_of_tr_eq,
+  refine seq_colim_over_glue g (ι (seq_diagram_of_over g (f a)) x)
+end
 
-  definition Kristina_F [unfold 7] (x : seq_colim_over g (ι f (f a))) : seq_colim_over g (ι f a) :=
-  begin
-    exact (over_f_equiv g a ⬝e (shift_equiv (λk, P (rep f k a)) (seq_diagram_of_over g a))⁻¹ᵉ) x
-  end
+definition Kristina_dpath_eq (k : ℕ) (x : P (rep f k (f a))) :
+  Kristina_dpath g k x =
+  dpair_eq_dpair (glue f a) (pathover_tr (glue f a) (ι (seq_diagram_of_over g (f a)) x)) ⬝
+  ap (dpair (ι f a)) (seq_colim_over_glue g (ι (seq_diagram_of_over g (f a)) x)) :=
+ap (sigma_eq _) !pathover_of_tr_eq_eq_concato ⬝ !sigma_eq_con ⬝ whisker_left _ !ap_dpair⁻¹
 
-  definition Kristina_F_def (x : seq_colim_over g (ι f (f a))) :
-    transport (seq_colim_over g) (glue f a) x = Kristina_F g x :=
+definition glue' (x : P a) :
+  ⟨ι f (f a), ιo g (g x)⟩ = ⟨ι f a, ιo g x⟩ :> sigma (seq_colim_over g) :=
+Kristina_dpath g 0 (g x) ⬝ ap (dpair (ι f a)) (glue (seq_diagram_of_over g a) x)
+
+  definition Kristina_gs_step {E : (Σ(x : seq_colim f), seq_colim_over g x) → Type}
+    (e : Πn (a : A n) (x : P a), E ⟨ι f a, ιo g x⟩) {k : ℕ}
+    (IH : Π{n} {a : A n} (x : P (rep f k a)), E ⟨ι f a, ι (seq_diagram_of_over g a) x⟩) :
+    Σ(gs : Π⦃n : ℕ⦄ {a : A n} (x : P (rep f (k+1) a)), E ⟨ι f a, ι (seq_diagram_of_over g a) x⟩),
+    Π⦃n : ℕ⦄ {a : A n} (x : P (rep f k (f a))),
+      pathover E (IH x) (Kristina_dpath g k x) (gs (transporto P (rep_f f k a) x)) :=
   begin
-    exact seq_colim_over_glue g x
+    fconstructor,
+    { intro n a,
+      refine equiv_rect (rep_f_equiv f P a k) _ _,
+      intro z, refine transport E _ (IH z),
+      exact Kristina_dpath g k z },
+    { intro n a x, exact !pathover_tr ⬝op !equiv_rect_comp⁻¹ }
   end
 
   definition Kristina_gs /- g_* -/ {E : (Σ(x : seq_colim f), seq_colim_over g x) → Type}
-    (e : Πn (a : A n) (y : P a), E ⟨ι f a, ιo g y⟩) {k : ℕ} : Π {n : ℕ} {a : A n} (y : P (rep f k a)),
-    E ⟨ι f a, ι (seq_diagram_of_over g a) y⟩ :=
+    (e : Πn (a : A n) (x : P a), E ⟨ι f a, ιo g x⟩) {k : ℕ} :
+    Π {n : ℕ} {a : A n} (x : P (rep f k a)), E ⟨ι f a, ι (seq_diagram_of_over g a) x⟩ :=
   begin
     induction k with k IH: intro n a x,
     { exact e n a x },
-    { revert x,
-      refine equiv_rect (rep_f_equiv f P a k) _ _,
-      intro z, refine transport E _ (IH z),
-      refine Kristina_dpath g (glue f a) (Kristina_F g) _ (ι (seq_diagram_of_over g (f a)) z),
-      apply elim_type_glue
---      apply eq_of_homotopy, exact seq_colim_over_glue g -- this can replace the last step, if wanted
-      }
+    { apply (Kristina_gs_step g e @IH).1 }
   end
 
-  definition Kristina_g {E : (Σ(x : seq_colim f), seq_colim_over g x) → Type}
-    (H : Πn (x : A n) (y : P x), E ⟨ι f x, ιo g y⟩) {n : ℕ} {x : A n} (p : seq_colim_over g (ι f x)) :
-    E ⟨ι f x, p⟩ :=
+  definition Kristina_gs_path_left {E : (Σ(x : seq_colim f), seq_colim_over g x) → Type}
+    (e : Π⦃n⦄ ⦃a : A n⦄ (x : P a), E ⟨ι f a, ιo g x⟩)
+    (w : Π⦃n⦄ ⦃a : A n⦄ (x : P a), pathover E (e (g x)) (glue' g x) (e x))
+    {k : ℕ} {n : ℕ} {a : A n} (x : P (rep f k (f a))) :
+    pathover E (Kristina_gs g e x) (Kristina_dpath g k x)
+               (Kristina_gs g e (transporto P (rep_f f k a) x)) :=
+  by apply (Kristina_gs_step g e (@(Kristina_gs g e) k)).2
+
+/- this is the bottom of the square we have to fill in the end -/
+  definition bottom_square {E : (Σ(x : seq_colim f), seq_colim_over g x) → Type}
+    (e : Π⦃n⦄ ⦃a : A n⦄ (x : P a), E ⟨ι f a, ιo g x⟩)
+    (w : Π⦃n⦄ ⦃a : A n⦄ (x : P a), pathover E (e (g x)) (glue' g x) (e x))
+    (k : ℕ) {n : ℕ} {a : A n} (x : P (rep f k (f a))) :=
+(move_top_of_right
+       (natural_square
+          (λ a_1,
+             dpair_eq_dpair (glue f a) (pathover_tr (glue f a) a_1) ⬝ ap (dpair (ι f a))
+               (seq_colim_over_glue g a_1))
+          (glue (seq_diagram_of_over g (f a))
+             x) ⬝hp ap_compose (dpair (ι f a))
+          (to_fun (seq_colim_over_equiv g a))
+          (glue (seq_diagram_of_over g (f a))
+             x) ⬝hp (ap02 (dpair (ι f a))
+           (ap_compose (shift_down (seq_diagram_of_over g a))
+              (to_fun (over_f_equiv g a))
+              (glue (seq_diagram_of_over g (f a))
+                 x) ⬝ ap02
+              (shift_down (seq_diagram_of_over g a))
+              (elim_glue _ _ _
+                 x) ⬝ ap_con
+              (shift_down (seq_diagram_of_over g a))
+              (ap (ι (shift_diag (seq_diagram_of_over g a)))
+                 (rep_f_equiv_natural g x))
+              (glue (shift_diag (seq_diagram_of_over g a))
+                 (to_fun (rep_f_equiv f P a k)
+                    x)) ⬝ (ap_compose'
+               (shift_down (seq_diagram_of_over g a))
+               (ι (shift_diag (seq_diagram_of_over g a)))
+               (rep_f_equiv_natural g
+                  x))⁻¹ ◾ elim_glue
+              (shift_diag (seq_diagram_of_over g a)) _ _
+              (to_fun (rep_f_equiv f P a k)
+                 x))⁻¹)⁻¹ ⬝hp ap_con
+          (dpair (ι f a))
+          (ap
+             (λx,
+                shift_down (seq_diagram_of_over g a)
+                  (ι (shift_diag (seq_diagram_of_over g a)) x))
+             (rep_f_equiv_natural g x))
+          (glue (seq_diagram_of_over g a)
+             (to_fun (rep_f_equiv f P a k) x))))
+
+/- this is the composition + filler -/
+  definition Kristina_gs_path_right_step {E : (Σ(x : seq_colim f), seq_colim_over g x) → Type}
+    (e : Π⦃n⦄ ⦃a : A n⦄ (x : P a), E ⟨ι f a, ιo g x⟩)
+    (w : Π⦃n⦄ ⦃a : A n⦄ (x : P a), pathover E (e (g x)) (glue' g x) (e x))
+    (k : ℕ) {n : ℕ} {a : A n} (x : P (rep f k (f a)))
+    (IH : Π(n : ℕ) (a : A n) (x : P (rep f k a)),
+    pathover E (Kristina_gs g e (seq_diagram_of_over g a x))
+             (ap (dpair (ι f a)) (glue (seq_diagram_of_over g a) x))
+             (Kristina_gs g e x)) :=
+  squareover_fill_r (bottom_square g e w k x)
+              (change_path (Kristina_dpath_eq g (succ k) (g x))
+       (Kristina_gs_path_left g e w (g x)) ⬝o pathover_ap E
+       (dpair (ι f a))
+       (pathover_ap
+          (λ (a_1 : seq_colim (seq_diagram_of_over g a)),
+             E ⟨ι f a, a_1⟩)
+          (ι (seq_diagram_of_over g a))
+          (apd (Kristina_gs g e) (rep_f_equiv_natural g x))))
+    (change_path (Kristina_dpath_eq g k x)
+       (Kristina_gs_path_left g e w x))
+    (IH (n+1) (f a) x)
+
+/- this is just the composition -/
+  definition Kristina_gs_path_right_step1 {E : (Σ(x : seq_colim f), seq_colim_over g x) → Type}
+    (e : Π⦃n⦄ ⦃a : A n⦄ (x : P a), E ⟨ι f a, ιo g x⟩)
+    (w : Π⦃n⦄ ⦃a : A n⦄ (x : P a), pathover E (e (g x)) (glue' g x) (e x))
+    (k : ℕ) {n : ℕ} {a : A n} (x : P (rep f k (f a)))
+    (IH : Π(n : ℕ) (a : A n) (x : P (rep f k a)),
+    pathover E (Kristina_gs g e (seq_diagram_of_over g a x))
+             (ap (dpair (ι f a)) (glue (seq_diagram_of_over g a) x))
+             (Kristina_gs g e x)) :=
+  (Kristina_gs_path_right_step g e w k x IH).1
+
+  definition Kristina_gs_path_right {E : (Σ(x : seq_colim f), seq_colim_over g x) → Type}
+    (e : Π⦃n⦄ ⦃a : A n⦄ (x : P a), E ⟨ι f a, ιo g x⟩)
+    (w : Π⦃n⦄ ⦃a : A n⦄ (x : P a), pathover E (e (g x)) (glue' g x) (e x))
+    (k : ℕ) {n : ℕ} {a : A n} (x : P (rep f k a)) :
+    pathover E (Kristina_gs g e (seq_diagram_of_over g a x))
+             (ap (dpair (ι f a)) (glue (seq_diagram_of_over g a) x))
+             (Kristina_gs g e x) :=
   begin
-    induction p with k y,
-    { exact Kristina_gs g H y },
-    { exact sorry }
+    revert n a x, induction k with k IH: intro n a x,
+    { exact pathover_cancel_left !pathover_tr⁻¹ᵒ (w x) },
+    { revert x, refine equiv_rect (rep_f_equiv f P a k) _ _, intro x,
+      exact Kristina_gs_path_right_step1 g e w k x IH }
   end
 
-  definition sigma_colim_rec {E : (Σ(x : seq_colim f), seq_colim_over g x) → Type}
-    (e : Π⦃n⦄ ⦃x : A n⦄ (y : P x), E ⟨ι f x, ιo g y⟩)
-    (K : Π⦃n⦄ ⦃x : A n⦄ (y : P x), pathover E (e (g y)) (glue' g y) (e y))
-    (v : Σ(x : seq_colim f), seq_colim_over g x) : E v :=
+  definition Kristina_g [unfold 10] {E : (Σ(x : seq_colim f), seq_colim_over g x) → Type}
+    (e : Π⦃n⦄ ⦃a : A n⦄ (x : P a), E ⟨ι f a, ιo g x⟩)
+    (w : Π⦃n⦄ ⦃a : A n⦄ (x : P a), pathover E (e (g x)) (glue' g x) (e x))
+    {n : ℕ} {a : A n} (x : seq_colim_over g (ι f a)) : E ⟨ι f a, x⟩ :=
   begin
-    induction v with x p,
-    induction x with n x,
-    { exact Kristina_g g e p },
-    { exact sorry }
+    induction x with k x k x,
+    { exact Kristina_gs g e x },
+    { apply pathover_of_pathover_ap E (dpair (ι f a)),
+      exact Kristina_gs_path_right g e w k x }
   end
 
+definition sigma_colim_rec {E : (Σ(x : seq_colim f), seq_colim_over g x) → Type}
+  (e : Π⦃n⦄ ⦃a : A n⦄ (x : P a), E ⟨ι f a, ιo g x⟩)
+  (w : Π⦃n⦄ ⦃a : A n⦄ (x : P a), pathover E (e (g x)) (glue' g x) (e x))
+  (v : Σ(x : seq_colim f), seq_colim_over g x) : E v :=
+begin
+  induction v with x y,
+  induction x with n a n a,
+  { exact Kristina_g g e w y },
+  { apply pi_pathover_left', intro x,
+    refine change_path (whisker_left _ !ap_inv ⬝ !con_inv_cancel_right)
+      (_ ⬝o pathover_ap E (dpair _) (apd (Kristina_g g e w) !seq_colim_over_glue⁻¹)),
+    induction x with k x k x,
+    { exact change_path !Kristina_dpath_eq (Kristina_gs_path_left g e w x) },
+    { apply pathover_pathover,
+      refine _ ⬝hop (ap (pathover_ap E _) (apd_compose2 (Kristina_g g e w) _ _) ⬝
+        pathover_ap_pathover_of_pathover_ap E (dpair (ι f a)) (seq_colim_over_equiv g a) _)⁻¹,
+      apply squareover_change_path_right',
+      refine _ ⬝hop !pathover_ap_change_path⁻¹ ⬝ ap (pathover_ap E _)
+        (apd02 _ (ap_compose (shift_down (seq_diagram_of_over g a)) _ _ ⬝ ap02 _ !elim_glue ⬝
+        !ap_con ⬝ !ap_compose'⁻¹ ◾ !elim_glue)⁻¹),
+      apply squareover_change_path_right,
+      refine _ ⬝hop (ap (pathover_ap E _) (!apd_con ⬝ (!apd_ap ◾o idp)) ⬝ !pathover_ap_cono)⁻¹,
+      apply squareover_change_path_right',
+      apply move_right_of_top_over,
+      refine _ ⬝hop (ap (pathover_ap E _) !rec_glue ⬝ to_right_inv !pathover_compose _)⁻¹,
+      refine ap (pathover_ap E _) !rec_glue ⬝ to_right_inv !pathover_compose _ ⬝pho _,
+      refine _ ⬝hop !equiv_rect_comp⁻¹,
+      exact (Kristina_gs_path_right_step g e w k x @(Kristina_gs_path_right g e w k)).2
+    }}
+end
 
-  /- ATTEMPT 1: show that this function has contractible fibers -/
-  theorem is_equiv_sigma_colim_of_colim_sigma : is_equiv (sigma_colim_of_colim_sigma g) :=
-  begin
-    apply @is_equiv_of_is_contr_fun,
-    intro v,
-    induction v with aa pp,
-    induction aa using seq_colim.rec_prop,
-    induction pp using seq_colim.rec_prop with k p,
-    fapply is_contr.mk,
-    { fapply fiber.mk,
-      { exact ι _ ⟨rep f k a, p⟩},
-      { esimp [sigma_colim_of_colim_sigma], fapply sigma_eq,
-        { esimp, apply rep_glue},
-        { esimp, rexact glue_over_rep g k p}}},
-    { intro v, induction v with v q,
-      induction v with l v l v,
-      { induction v with a' p', esimp [sigma_colim_of_colim_sigma] at q,
-        fapply fiber_eq,
-        { esimp, exact sorry},
-        { esimp, exact sorry}},
-      { induction v with a' p', esimp, exact sorry}}
-  end
-
-  /- ATTEMPT 2: give the reverse function and show they are mutually inverses
-    This attempt looks most promising. -/
+  /- We now define the map back, and show using this induction principle that the composites are the identity -/
   variable {P}
 
   definition colim_sigma_of_sigma_colim_constructor [unfold 7] (p : seq_colim_over g (ι f a))
@@ -599,12 +630,6 @@ set_option pp.binder_types true
     apply eq_pathover, apply colim_sigma_of_sigma_colim_path2
   end
 
-  -- This is ap_dpair_eq_dpair followed by apd011_eq_apo11_apd
-  -- definition ap_sigma_eq {A X : Type} {B : A → Type} (f : (Σa, B a) → X)
-  --   {a a' : A} {p : a = a'} {b : B a} {b' : B a'} (q : b =[p] b') :
-  --   ap f (sigma_eq p q) = apo11_constant_right (apd (λa b, f ⟨a, b⟩) p) q :=
-  -- by induction q; reflexivity
-
   theorem colim_sigma_of_sigma_colim_of_colim_sigma (a : seq_colim (seq_diagram_sigma g)) :
     colim_sigma_of_sigma_colim g (sigma_colim_of_colim_sigma g a) = a :=
   begin
@@ -620,91 +645,34 @@ set_option pp.binder_types true
     rewrite [▸*, tr_eq_of_pathover_concato_eq, ap_con, ↑glue_over,
              to_right_inv !pathover_equiv_tr_eq, ap_inv, con.assoc, inv_con_cancel_left],
     refine whisker_left _ !elim_glue ⬝ _,
-    apply idp_con}
-  end
-
-  definition sigma_colim_of_colim_sigma_of_sigma_colim_constructor [unfold 7]
-    (p : seq_colim_over g (ι f a)) :
-    sigma_colim_of_colim_sigma g (colim_sigma_of_sigma_colim g ⟨ι f a, p⟩) = ⟨ι f a, p⟩ :=
-  begin
-    induction p with k p k p,
-    { apply sigma_eq (rep_glue f k a), esimp, exact glue_over_rep g k p},
-    { apply eq_pathover, esimp,
-      refine ap_compose (sigma_colim_of_colim_sigma g) _ _ ⬝ph _,
-      refine ap02 _ !elim_glue ⬝ph _,
-      refine !elim_glue ⬝ph _, esimp,
-      refine _ ⬝hp !ap_dpair⁻¹,
-      fapply square_dpair_eq_dpair,
-      { apply square_of_eq, reflexivity},
-      apply squareover_of_pathover,
-      apply pathover_idp_of_eq,
-      exact sorry
-    }
+    apply idp_con }
   end
 
   theorem sigma_colim_of_colim_sigma_of_sigma_colim (v : Σ(x : seq_colim f), seq_colim_over g x)
     : sigma_colim_of_colim_sigma g (colim_sigma_of_sigma_colim g v) = v :=
   begin
-    induction v with x p,
-    induction x with n a n a,
-    { apply sigma_colim_of_colim_sigma_of_sigma_colim_constructor},
-    apply pi_pathover_left, intro x, esimp at x,
-    exact sorry
-    -- refine _ ⬝ ap (colim_sigma_of_sigma_colim_constructor g) !seq_colim_over_glue⁻¹,
-    -- induction x with k p k p,
-    -- { esimp, exact colim_sigma_of_sigma_colim_path1 g p},
-    -- apply eq_pathover, apply colim_sigma_of_sigma_colim_path2
+    revert v, refine sigma_colim_rec _ _ _,
+    { intro n a x, reflexivity },
+    { intro n a x, apply eq_pathover_id_right, apply hdeg_square,
+      refine ap_compose (sigma_colim_of_colim_sigma g) _ _ ⬝ _,
+      refine ap02 _ (!ap_con ⬝ (!ap_dpair_eq_dpair ⬝ !apd011_eq_apo11_apd ⬝
+        ap (λx, apo11_constant_right x _) !rec_glue ⬝ !apo11_arrow_pathover_constant_right ⬝
+        begin rewrite [▸*, ap_inv, to_right_inv !pathover_equiv_tr_eq, inv_con_cancel_right],
+          reflexivity end) ◾ (!ap_compose'⁻¹ ⬝ !elim_glue)) ⬝ _,
+      refine !ap_con ⬝ !idp_con ⬝ !elim_glue ⬝ _,
+      refine _ ⬝ !sigma_eq_con ⬝ whisker_left _ !ap_dpair⁻¹,
+      exact ap (sigma_eq _) !concato_eq_eq }
   end
 
   variable (P)
-  definition seq_colim_over_equiv [constructor]
+  definition sigma_seq_colim_over_equiv [constructor]
     : (Σ(x : seq_colim f), seq_colim_over g x) ≃ seq_colim (seq_diagram_sigma g) :=
   equiv.MK (colim_sigma_of_sigma_colim g)
            (sigma_colim_of_colim_sigma g)
            (colim_sigma_of_sigma_colim_of_colim_sigma g)
            (sigma_colim_of_colim_sigma_of_sigma_colim g)
 
-
-  /- ATTEMPT 3: try to prove the equivalence by using flattening -/
-
-  /-
-  definition goal_def1 : seq_diagram_over (λ (n : ℕ) (x : A n), seq_colim (λ (k : ℕ), P (rep k x))) :=
-  begin
-    intro n a x,
-    apply shift_diag P,
-  end
-
-  definition goal : @(seq_colim (λn, Σ(x : A n), seq_colim (λk, P (rep k x)))) begin end
-                    ≃ seq_colim (λn, Σ(x : A n), P x) :=
-  _
-  -/
-
   end over
-
-  /- ATTEMPT 4: try to prove the equivalence by proving the induction principle and computation rules
-     of the colimit-of-sigma's for the sigma-of-colimits. This is the same technique used
-     in the proof for the flattening lemma -/
-
-
-  -- namespace sigma_colim
-
-  -- variables (P : Π⦃n⦄, A n → Type) [g : seq_diagram_over P]
-  -- include g
-
-  -- definition Sincl (v : Σ(x : A n), P x) : Σ(x : seq_colim A), seq_colim_over P x :=
-  -- ⟨ι v.1, ι' _ 0 v.2⟩
-
-  -- definition Sglue (v : Σ(x : A n), P x) : Sincl P (seq_diagram_sigma P v) = Sincl P v :=
-  -- sigma_eq !glue (!glue_over ⬝op glue v.2)
-
-  -- protected definition rec {Q : (Σ(x : seq_colim A), seq_colim_over P x) → Type}
-  --   (Qincl : Π⦃n : ℕ⦄ (v : Σ(x : A n), P x), Q (Sincl P v))
-  --   (Qglue : Π⦃n : ℕ⦄ (v : Σ(x : A n), P x), Qincl (seq_diagram_sigma P v) =[Sglue P v] Qincl v)
-  --   (v : Σ(x : seq_colim A), seq_colim_over P x) : Q v :=
-  -- sorry
-
-  -- end sigma_colim
-
 
 end seq_colim
 
