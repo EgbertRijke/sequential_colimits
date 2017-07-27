@@ -28,6 +28,23 @@ namespace seq_colim
     seq_colim (seq_diagram_arrow_left f X) ≃ (X → seq_colim f) :=
   equiv.mk _ (H f)
 
+  definition omega_compact_of_equiv [unfold 4] (X : Type)
+    (H : Π⦃A : ℕ → Type⦄ (f : seq_diagram A),
+      seq_colim (seq_diagram_arrow_left f X) ≃ (X → seq_colim f))
+    (p : Π⦃A : ℕ → Type⦄ (f : seq_diagram A) {n : ℕ} (g : X → A n) (x : X),
+      H f (ι _ g) x = ι _ (g x))
+    (q : Π⦃A : ℕ → Type⦄ (f : seq_diagram A) {n : ℕ} (g : X → A n) (x : X),
+      square (p f (@f n ∘ g) x) (p f g x) (ap (λg, H f g x)
+             (glue (seq_diagram_arrow_left f X) g)) (glue f (g x)))
+    : omega_compact X :=
+  λA f, is_equiv_of_equiv_of_homotopy (H f)
+  begin
+    intro g, apply eq_of_homotopy, intro x,
+    induction g with n g n g,
+    { exact p f g x },
+    { apply eq_pathover, refine _ ⬝hp !elim_glue⁻¹, exact q f g x }
+  end
+
   local attribute is_contr_seq_colim [instance]
   definition is_contr_empty_arrow [instance] (X : Type) : is_contr (empty → X) :=
   by apply is_trunc_pi; contradiction
@@ -70,17 +87,12 @@ namespace seq_colim
   -- which proves first that the types are equivalent
   definition omega_compact_unit' [instance] [constructor] : omega_compact unit :=
   begin
-    intro A f,
-    fapply is_equiv_of_equiv_of_homotopy,
-    { refine _ ⬝e !arrow_unit_left⁻¹ᵉ, fapply seq_colim_equiv,
-      { intro n, apply arrow_unit_left},
-      intro n f, reflexivity},
-    { esimp, intro x, apply eq_of_homotopy, intro u, induction u, esimp,
-      induction x with n g n g,
-      { reflexivity},
-      apply eq_pathover, apply hdeg_square,
-      refine !elim_glue ⬝ !idp_con ⬝ _,
-      unfold [arrow_colim_of_colim_arrow], apply !elim_glue⁻¹}
+    fapply omega_compact_of_equiv,
+    { intro A f, refine _ ⬝e !arrow_unit_left⁻¹ᵉ, fapply seq_colim_equiv,
+      { intro n, apply arrow_unit_left },
+      intro n f, reflexivity },
+    { intros, induction x, reflexivity },
+    { intros, induction x, esimp, apply hdeg_square, exact !elim_glue ⬝ !idp_con },
   end
 
   local attribute equiv_of_omega_compact [constructor]

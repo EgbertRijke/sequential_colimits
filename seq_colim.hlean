@@ -6,7 +6,7 @@ Authors: Floris van Doorn, Egbert Rijke
 import hit.colimit .sequence cubical.squareover types.arrow .move_to_lib types.equiv
        cubical.pathover2 .squareover
 
-open eq nat sigma sigma.ops quotient equiv pi is_trunc is_equiv fiber function
+open eq nat sigma sigma.ops quotient equiv pi is_trunc is_equiv fiber function trunc
 
 attribute tro_invo_tro [unfold 9] -- TODO: move
 
@@ -19,6 +19,11 @@ attribute tro_invo_tro [unfold 9] -- TODO: move
 --   _
 -- -- exit
 
+/- move this to types.eq -/
+definition total_space_method2 {A : Type} (a₀ : A) (code : A → Type) (H : is_contr (Σa, code a))
+  (c₀ : code a₀) (a : A) : (a₀ = a) ≃ code a :=
+total_space_method a₀ code H (ap pr1 (center_eq ⟨a₀, c₀⟩)) a
+
 
 
 namespace seq_colim
@@ -29,11 +34,11 @@ abbreviation ι' [constructor] [parsing_only] {A} (f n) := @inclusion A f n
 
 variables {A : ℕ → Type} (f : seq_diagram A)
 
-definition rep0_glue (k : ℕ) (a : A 0) : ι f (rep0 f k a) = ι f a :=
+definition lrep_glue {n m : ℕ} (H : n ≤ m) (a : A n) : ι f (lrep f H a) = ι f a :=
 begin
-  induction k with k IH,
-  { reflexivity},
-  { exact glue f (rep0 f k a) ⬝ IH}
+  induction H with m H p,
+  { reflexivity },
+  { exact glue f (lrep f H a) ⬝ p }
 end
 
 -- probably not needed
@@ -46,8 +51,8 @@ definition colim_back [unfold 4] [H : is_equiseq f] : seq_colim f → A 0 :=
 begin
   intro x,
   induction x with k a k a,
-  { exact rep0_back f k a},
-  rexact ap (rep0_back f k) (left_inv (@f k) a),
+  { exact lrep_back f (zero_le k) a},
+  rexact ap (lrep_back f (zero_le k)) (left_inv (@f k) a),
 end
 
 set_option pp.binder_types true
@@ -57,26 +62,26 @@ definition inv_homotopy_inv_of_homotopy {A B : Type} (f g : A → B) (p : f ~ g)
 λa, ap f⁻¹ ((right_inv g a)⁻¹ ⬝ (p (g⁻¹ a))⁻¹) ⬝ left_inv f (g⁻¹ a)
 
 section
-local attribute is_equiv_rep0 [instance] --[priority 500]
+local attribute is_equiv_lrep [instance] --[priority 500]
 definition is_equiv_ι (H : is_equiseq f) : is_equiv (ι' f 0) :=
 begin
   fapply adjointify,
   { exact colim_back f},
   { intro x, induction x with k a k a,
     { esimp,
-      refine (rep0_glue f k (rep0_back f k a))⁻¹ ⬝ _,
-      exact ap (ι f) (right_inv (rep0 f k) a)},
+      refine (lrep_glue f (zero_le k) (lrep_back f (zero_le k) a))⁻¹ ⬝ _,
+      exact ap (ι f) (right_inv (lrep f (zero_le k)) a)},
     apply eq_pathover_id_right,
     refine (ap_compose (ι f) (colim_back f) _) ⬝ph _,
     refine ap02 _ _ ⬝ph _, rotate 1,
     { rexact elim_glue f _ _ a},
-    refine _ ⬝pv ((natural_square (rep0_glue f k)
-                                  (ap (rep0_back f k) (left_inv (@f k) a)))⁻¹ʰ ⬝h _),
-    { exact (glue f (rep0 f k (rep0_back f (succ k) (f a))))⁻¹ ⬝
-            ap (ι f) (right_inv (rep0 f (succ k)) (f a))},
+    refine _ ⬝pv ((natural_square (lrep_glue f (zero_le k))
+                                  (ap (lrep_back f (zero_le k)) (left_inv (@f k) a)))⁻¹ʰ ⬝h _),
+    { exact (glue f (lrep f (zero_le k) (lrep_back f (zero_le (succ k)) (f a))))⁻¹ ⬝
+            ap (ι f) (right_inv (lrep f (zero_le (succ k))) (f a))},
     { rewrite [-con.assoc, -con_inv]},
     refine !ap_compose⁻¹ ⬝ ap_compose (ι f) _ _ ⬝ph _,
-    refine dconcat (aps (ι' f k) (natural_square (right_inv (rep0 f k))
+    refine dconcat (aps (ι' f k) (natural_square (right_inv (lrep f (zero_le k)))
                                                  (left_inv (@f _) a))) _,
     apply move_top_of_left, apply move_left_of_bot,
     refine ap02 _ (whisker_left _ (adj (@f _) a)) ⬝pv _,
@@ -96,118 +101,6 @@ begin
   { reflexivity},
   { exact glue f (rep f k a) ⬝ IH}
 end
-
-definition shift_up [unfold 3] (x : seq_colim f) : seq_colim (shift_diag f) :=
-begin
-  induction x,
-  { exact ι' (shift_diag f) n (f a)},
-  { exact glue (shift_diag f) (f a)}
-end
-
-definition shift_down [unfold 3] (x : seq_colim (shift_diag f)) : seq_colim f :=
-begin
-  induction x,
-  { exact ι' f (n+1) a},
-  { exact glue f a}
-end
-
--- definition kshift_up (k : ℕ) (a : seq_colim A) : @seq_colim (λn, A (k + n)) (kshift_diag A k) :=
--- begin
---   induction a,
---   { apply ι' n, refine my.add.comm n k ▸ rep k a},
---   { exact sorry}
--- end
-
--- definition kshift_down (k : ℕ) (a : @seq_colim (λn, A (k + n)) (kshift_diag A k)) : seq_colim A :=
--- begin
---   induction a,
---   { exact ι a},
---   { exact glue a}
--- end
-
--- definition kshift_up' (k : ℕ) (x : seq_colim f) : seq_colim (kshift_diag' f k) :=
--- begin
---   induction x,
---   { apply ι' _ n, exact rep f k a},
---   { exact sorry}
--- end
-
--- definition kshift_down' (k : ℕ) (x : seq_colim (kshift_diag' f k)) : seq_colim f :=
--- begin
---   induction x,
---   { exact ι f a},
---   { esimp, exact sorry}
--- end
-
-end
-
-variable (A)
-definition shift_equiv [constructor] : seq_colim f ≃ seq_colim (shift_diag f) :=
-equiv.MK (shift_up f)
-         (shift_down f)
-         abstract begin
-           intro x, induction x,
-           { exact glue _ a },
-           { apply eq_pathover,
-             rewrite [▸*, ap_id, ap_compose (shift_up f) (shift_down f), ↑shift_down,
-                      elim_glue],
-             apply square_of_eq, apply whisker_right, exact !elim_glue⁻¹ }
-         end end
-         abstract begin
-           intro x, induction x,
-           { exact glue _ a },
-           { apply eq_pathover,
-             rewrite [▸*, ap_id, ap_compose (shift_down f) (shift_up f), ↑shift_up,
-                      elim_glue],
-             apply square_of_eq, apply whisker_right, exact !elim_glue⁻¹ }
-         end end
-
--- definition kshift_equiv [constructor] (k : ℕ)
---   : seq_colim A ≃ @seq_colim (λn, A (k + n)) (kshift_diag A k) :=
--- equiv.MK (kshift_up k)
---          (kshift_down k)
---          abstract begin
---            intro a, exact sorry,
---            -- induction a,
---            -- { esimp, exact glue a},
---            -- { apply eq_pathover,
---            --   rewrite [▸*, ap_id, ap_compose shift_up shift_down, ↑shift_down,
---            --            @elim_glue (λk, A (succ k)) _, ↑shift_up],
---            --   apply square_of_eq, apply whisker_right, exact !elim_glue⁻¹}
---          end end
---          abstract begin
---            intro a, exact sorry
---            -- induction a,
---            -- { exact glue a},
---            -- { apply eq_pathover,
---            --   rewrite [▸*, ap_id, ap_compose shift_down shift_up, ↑shift_up,
---            --            @elim_glue A _, ↑shift_down],
---            --   apply square_of_eq, apply whisker_right, exact !elim_glue⁻¹}
---          end end
-
--- definition kshift_equiv' [constructor] (k : ℕ) : seq_colim f ≃ seq_colim (kshift_diag' f k) :=
--- equiv.MK (kshift_up' f k)
---          (kshift_down' f k)
---          abstract begin
---            intro a, exact sorry,
---            -- induction a,
---            -- { esimp, exact glue a},
---            -- { apply eq_pathover,
---            --   rewrite [▸*, ap_id, ap_compose shift_up shift_down, ↑shift_down,
---            --            @elim_glue (λk, A (succ k)) _, ↑shift_up],
---            --   apply square_of_eq, apply whisker_right, exact !elim_glue⁻¹}
---          end end
---          abstract begin
---            intro a, exact sorry
---            -- induction a,
---            -- { exact glue a},
---            -- { apply eq_pathover,
---            --   rewrite [▸*, ap_id, ap_compose shift_down shift_up, ↑shift_up,
---            --            @elim_glue A _, ↑shift_down],
---            --   apply square_of_eq, apply whisker_right, exact !elim_glue⁻¹}
---          end end
-
-variable {A}
 
 /- functorial action and equivalences -/
 section functor
@@ -289,6 +182,158 @@ equiv.mk _ !is_equiv_seq_colim_rec
 
 end functor
 
+definition shift_up [unfold 3] (x : seq_colim f) : seq_colim (shift_diag f) :=
+begin
+  induction x,
+  { exact ι' (shift_diag f) n (f a)},
+  { exact glue (shift_diag f) (f a)}
+end
+
+definition shift_down [unfold 3] (x : seq_colim (shift_diag f)) : seq_colim f :=
+begin
+  induction x,
+  { exact ι' f (n+1) a},
+  { exact glue f a}
+end
+
+-- definition kshift_up (k : ℕ) (a : seq_colim A) : @seq_colim (λn, A (k + n)) (kshift_diag A k) :=
+-- begin
+--   induction a,
+--   { apply ι' n, refine my.add.comm n k ▸ rep k a},
+--   { exact sorry}
+-- end
+
+-- definition kshift_down (k : ℕ) (a : @seq_colim (λn, A (k + n)) (kshift_diag A k)) : seq_colim A :=
+-- begin
+--   induction a,
+--   { exact ι a},
+--   { exact glue a}
+-- end
+
+-- definition kshift_up' (k : ℕ) (x : seq_colim f) : seq_colim (kshift_diag' f k) :=
+-- begin
+--   induction x,
+--   { apply ι' _ n, exact rep f k a},
+--   { exact sorry}
+-- end
+
+-- definition kshift_down' (k : ℕ) (x : seq_colim (kshift_diag' f k)) : seq_colim f :=
+-- begin
+--   induction x,
+--   { exact ι f a},
+--   { esimp, exact sorry}
+-- end
+
+end
+
+definition shift_equiv [constructor] : seq_colim f ≃ seq_colim (shift_diag f) :=
+equiv.MK (shift_up f)
+         (shift_down f)
+         abstract begin
+           intro x, induction x,
+           { exact glue _ a },
+           { apply eq_pathover,
+             rewrite [▸*, ap_id, ap_compose (shift_up f) (shift_down f), ↑shift_down,
+                      elim_glue],
+             apply square_of_eq, apply whisker_right, exact !elim_glue⁻¹ }
+         end end
+         abstract begin
+           intro x, induction x,
+           { exact glue _ a },
+           { apply eq_pathover,
+             rewrite [▸*, ap_id, ap_compose (shift_down f) (shift_up f), ↑shift_up,
+                      elim_glue],
+             apply square_of_eq, apply whisker_right, exact !elim_glue⁻¹ }
+         end end
+
+-- definition kshift_equiv [constructor] (k : ℕ)
+--   : seq_colim A ≃ @seq_colim (λn, A (k + n)) (kshift_diag A k) :=
+-- equiv.MK (kshift_up k)
+--          (kshift_down k)
+--          abstract begin
+--            intro a, exact sorry,
+--            -- induction a,
+--            -- { esimp, exact glue a},
+--            -- { apply eq_pathover,
+--            --   rewrite [▸*, ap_id, ap_compose shift_up shift_down, ↑shift_down,
+--            --            @elim_glue (λk, A (succ k)) _, ↑shift_up],
+--            --   apply square_of_eq, apply whisker_right, exact !elim_glue⁻¹}
+--          end end
+--          abstract begin
+--            intro a, exact sorry
+--            -- induction a,
+--            -- { exact glue a},
+--            -- { apply eq_pathover,
+--            --   rewrite [▸*, ap_id, ap_compose shift_down shift_up, ↑shift_up,
+--            --            @elim_glue A _, ↑shift_down],
+--            --   apply square_of_eq, apply whisker_right, exact !elim_glue⁻¹}
+--          end end
+
+-- definition kshift_equiv' [constructor] (k : ℕ) : seq_colim f ≃ seq_colim (kshift_diag' f k) :=
+-- equiv.MK (kshift_up' f k)
+--          (kshift_down' f k)
+--          abstract begin
+--            intro a, exact sorry,
+--            -- induction a,
+--            -- { esimp, exact glue a},
+--            -- { apply eq_pathover,
+--            --   rewrite [▸*, ap_id, ap_compose shift_up shift_down, ↑shift_down,
+--            --            @elim_glue (λk, A (succ k)) _, ↑shift_up],
+--            --   apply square_of_eq, apply whisker_right, exact !elim_glue⁻¹}
+--          end end
+--          abstract begin
+--            intro a, exact sorry
+--            -- induction a,
+--            -- { exact glue a},
+--            -- { apply eq_pathover,
+--            --   rewrite [▸*, ap_id, ap_compose shift_down shift_up, ↑shift_up,
+--            --            @elim_glue A _, ↑shift_down],
+--            --   apply square_of_eq, apply whisker_right, exact !elim_glue⁻¹}
+--          end end
+
+/- todo: define functions back and forth explicitly -/
+
+definition transport_lemma {A : Type} {C : A → Type} {g₁ : A → A}
+  {x y : A} (p : x = y) (f : Π⦃x⦄, C x → C (g₁ x)) (z : C x) :
+  transport C (ap g₁ p)⁻¹ (f (transport C p z)) = f z :=
+by induction p; reflexivity
+
+definition transport_lemma2 {A : Type} {C : A → Type} {g₁ : A → A}
+  {x y : A} (p : x = y) (f : Π⦃x⦄, C x → C (g₁ x)) (z : C x) :
+  transport C (ap g₁ p) (f z) = f (transport C p z) :=
+by induction p; reflexivity
+
+definition iterate_equiv2 {A : Type} {C : A → Type} (f : A → A) (h : Πa, C a ≃ C (f a))
+  (k : ℕ) (a : A) : C a ≃ C (f^[k] a) :=
+begin induction k with k IH, reflexivity, exact IH ⬝e h (f^[k] a) end
+
+definition kshift'_equiv [constructor] (k : ℕ) : seq_colim f ≃ seq_colim (kshift_diag' f k) :=
+begin
+  induction k with k IH,
+  { reflexivity },
+  { exact IH ⬝e shift_equiv (kshift_diag' f k) ⬝e
+      seq_colim_equiv (λn, equiv_ap A (succ_add n k))
+                      (λn a, proof !tr_inv_tr ⬝ !transport_lemma⁻¹ qed) }
+end
+
+definition kshift_equiv_inv [constructor] (k : ℕ) : seq_colim (kshift_diag f k) ≃ seq_colim f :=
+begin
+  induction k with k IH,
+  { exact seq_colim_equiv (λn, equiv_ap A (nat.zero_add n)) (λn a, !transport_lemma2) },
+  { exact seq_colim_equiv (λn, equiv_ap A (succ_add k n))
+                          (λn a, transport_lemma2 (succ_add k n) f a) ⬝e
+          (shift_equiv (kshift_diag f k))⁻¹ᵉ ⬝e IH }
+end
+
+definition kshift_equiv [constructor] (k : ℕ) : seq_colim f ≃ seq_colim (kshift_diag f k) :=
+(kshift_equiv_inv f k)⁻¹ᵉ
+
+-- definition kshift_equiv2 [constructor] (k : ℕ) : seq_colim f ≃ seq_colim (kshift_diag f k) :=
+-- begin
+--   refine equiv_change_fun (kshift_equiv f k) _,
+
+-- end
+
 definition seq_colim_constant_seq (X : Type) : seq_colim (constant_seq X) ≃ X :=
 (equiv.mk _ (is_equiv_ι _ (λn, !is_equiv_id)))⁻¹ᵉ
 
@@ -318,7 +363,7 @@ seq_colim_equiv (rep_f_equiv f P a) (λk p, rep_f_equiv_natural g p)
 
 definition seq_colim_over_equiv :
   seq_colim (seq_diagram_of_over g (f a)) ≃ seq_colim (seq_diagram_of_over g a) :=
-over_f_equiv g a ⬝e (shift_equiv (λk, P (rep f k a)) (seq_diagram_of_over g a))⁻¹ᵉ
+over_f_equiv g a ⬝e (shift_equiv (seq_diagram_of_over g a))⁻¹ᵉ
 variable {a}
 
 include g
@@ -666,26 +711,104 @@ equiv.MK (colim_sigma_of_sigma_colim g)
 
 end over
 
+definition id0_seq_diagram_over [unfold_full] (x : A 0) :
+  seq_diagram_over f (λk y, lrep f (zero_le k) x = y) :=
+λk y p, ap (@f k) p
+
+definition seq_colim_id_equiv_seq_colim_id0 (x y : A 0) :
+  seq_colim (id_seq_diagram f 0 x y) ≃ seq_colim (id0_seq_diagram f x y) :=
+seq_colim_equiv
+  (λn, !lrep_eq_lrep_irrel (nat.zero_add n))
+  (λn p, !lrep_eq_lrep_irrel_natural)
+
+definition kshift_equiv_inv_incl_kshift_diag {n k : ℕ} (x : A (n + k)) :
+  kshift_equiv_inv f n (ι' (kshift_diag f n) k x) = ι f x :=
+begin
+  revert A f k x, induction n with n IH: intro A f k x,
+  { exact apd011 (ι' f) !nat.zero_add⁻¹ !pathover_tr⁻¹ᵒ },
+  { exact !IH ⬝ apd011 (ι' f) !succ_add⁻¹ !pathover_tr⁻¹ᵒ }
+end
+
+definition incl_kshift_diag {n k : ℕ} (x : A (n + k)) :
+  ι' (kshift_diag f n) k x = kshift_equiv f n (ι f x) :=
+eq_inv_of_eq (kshift_equiv_inv_incl_kshift_diag f x)
+
+definition incl_kshift_diag0 {n : ℕ} (x : A n) :
+  ι' (kshift_diag f n) 0 x = kshift_equiv f n (ι f x) :=
+incl_kshift_diag f x
+
+definition seq_colim_eq_equiv0' (x y : A 0) : ι f x = ι f y ≃ seq_colim (id_seq_diagram f 0 x y) :=
+begin
+  refine total_space_method2 (ι f x) (seq_colim_over (id0_seq_diagram_over f x)) _ _ (ι f y) ⬝e _,
+  { apply @(is_trunc_equiv_closed_rev _
+      (sigma_seq_colim_over_equiv _ _)), apply is_contr_seq_colim },
+  { exact ιo _ idp },
+  { apply seq_colim_equiv (λn, eq_equiv_eq_closed !lrep_irrel_eq idp),
+    intro n p, esimp, refine whisker_right _ (!lrep_irrel_eq2⁻² ⬝ !ap_inv⁻¹) ⬝ !ap_con⁻¹ }
+end
+
+definition seq_colim_eq_equiv0 (x y : A 0) : ι f x = ι f y ≃ seq_colim (id0_seq_diagram f x y) :=
+seq_colim_eq_equiv0' f x y ⬝e seq_colim_id_equiv_seq_colim_id0 f x y
+
+definition seq_colim_eq_equiv {n : ℕ} (x y : A n) :
+  ι f x = ι f y ≃ seq_colim (id_seq_diagram f n x y) :=
+eq_equiv_fn_eq_of_equiv (kshift_equiv f n) (ι f x) (ι f y) ⬝e
+eq_equiv_eq_closed (incl_kshift_diag0 f x)⁻¹ (incl_kshift_diag0 f y)⁻¹ ⬝e
+seq_colim_eq_equiv0' (kshift_diag f n) x y ⬝e
+@seq_colim_equiv _ _ _ (λk, ap (@f _))
+  (λm, eq_equiv_eq_closed !lrep_kshift_diag !lrep_kshift_diag)
+  (λm p, whisker_right _ (whisker_right _ !ap_inv⁻¹ ⬝ !ap_con⁻¹) ⬝ !ap_con⁻¹) ⬝e
+seq_colim_equiv
+  (λm, !lrep_eq_lrep_irrel (ap (add n) (nat.zero_add m)))
+  begin intro m q,
+    refine _ ⬝ lrep_eq_lrep_irrel_natural f (le_add_right n m) (ap (add n) (nat.zero_add m)) q,
+    exact ap (λx, lrep_eq_lrep_irrel f _ _ _ _ x _) !is_prop.elim
+  end
+
+open algebra
+theorem is_trunc_seq_colim [instance] (k : ℕ₋₂) [H : Πn, is_trunc k (A n)] :
+  is_trunc k (seq_colim f) :=
+begin
+  revert A f H, induction k with k IH: intro A f H,
+  { apply is_contr_seq_colim },
+  { apply is_trunc_succ_intro, intro x y,
+    induction x using seq_colim.rec_prop with n a,
+    induction y using seq_colim.rec_prop with m a',
+    apply is_trunc_equiv_closed,
+      exact eq_equiv_eq_closed (lrep_glue _ (le_max_left n m) _) (lrep_glue _ (le_max_right n m) _),
+    apply is_trunc_equiv_closed_rev,
+      apply seq_colim_eq_equiv,
+    apply IH, intro l, apply is_trunc_eq }
+end
+
+definition seq_colim_trunc_of_trunc_seq_colim [unfold 4] (k : ℕ₋₂) (x : trunc k (seq_colim f)) :
+  seq_colim (trunc_diagram k f) :=
+begin induction x with x, exact seq_colim_functor (λn, tr) (λn y, idp) x end
+
+definition trunc_seq_colim_of_seq_colim_trunc [unfold 4] (k : ℕ₋₂)
+  (x : seq_colim (trunc_diagram k f)) : trunc k (seq_colim f) :=
+begin
+  induction x with n x n x,
+  { induction x with a, exact tr (ι f a) },
+  { induction x with a, exact ap tr (glue f a) }
+end
+
+definition trunc_seq_colim_equiv [constructor] (k : ℕ₋₂) :
+  trunc k (seq_colim f) ≃ seq_colim (trunc_diagram k f) :=
+equiv.MK (seq_colim_trunc_of_trunc_seq_colim f k) (trunc_seq_colim_of_seq_colim_trunc f k)
+  abstract begin
+    intro x, induction x with n x n x,
+    { induction x with a, reflexivity },
+    { induction x with a, apply eq_pathover_id_right, apply hdeg_square,
+      refine ap_compose (seq_colim_trunc_of_trunc_seq_colim f k) _ _ ⬝ ap02 _ !elim_glue ⬝ _,
+      refine !ap_compose'⁻¹ ⬝ !elim_glue ⬝ _, exact !idp_con }
+  end end
+  abstract begin
+    intro x, induction x with x, induction x with n a n a,
+    { reflexivity },
+    { apply eq_pathover, apply hdeg_square,
+      refine ap_compose (trunc_seq_colim_of_seq_colim_trunc f k) _ _ ⬝ ap02 _ !elim_glue ⬝ _,
+      refine !ap_compose'⁻¹ ⬝ !elim_glue }
+  end end
+
 end seq_colim
-
-
--- We need a characterization of equality in seq_colim for the following results:
-
-
--- definition is_prop_seq_colim {A : ℕ → Type} (f : seq_diagram A)
---   [Πk, is_prop (A k)] : is_prop (seq_colim f) :=
--- begin
---   apply is_prop.mk,
---   intro x,
---   induction x using seq_colim.rec_prop with n a n a,
--- end
-
--- definition is_trunc_seq_colim (n : ℕ₋₂) {A : ℕ → Type} (f : seq_diagram A)
---   [Πk, is_trunc n (A k)] : is_trunc n (seq_colim f) :=
--- begin
---   induction n with n IH,
---   { fapply is_contr.mk,
---     { exact ι' f 0 !center},
---     { },
---   { }
--- end
