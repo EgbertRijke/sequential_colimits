@@ -6,7 +6,8 @@ Authors: Floris van Doorn, Egbert Rijke
 
 import .seq_colim types.unit
 
-open eq nat is_equiv equiv is_trunc pi unit function prod unit sigma sigma.ops
+open eq nat is_equiv equiv is_trunc pi unit function prod unit sigma sigma.ops sum prod trunc fin
+     algebra
 
 namespace seq_colim
 
@@ -58,7 +59,7 @@ namespace seq_colim
     { intro h, apply is_prop.elim}
   end
 
-  definition omega_compact_unit [instance] [constructor] : omega_compact unit :=
+  definition omega_compact_unit' [instance] [constructor] : omega_compact unit :=
   begin
     intro A f,
     fapply adjointify,
@@ -85,7 +86,7 @@ namespace seq_colim
 
   -- The following is a start of a different proof that unit is omega-compact,
   -- which proves first that the types are equivalent
-  definition omega_compact_unit' [instance] [constructor] : omega_compact unit :=
+  definition omega_compact_unit [instance] [constructor] : omega_compact unit :=
   begin
     fapply omega_compact_of_equiv,
     { intro A f, refine _ ⬝e !arrow_unit_left⁻¹ᵉ, fapply seq_colim_equiv,
@@ -99,28 +100,42 @@ namespace seq_colim
   definition omega_compact_prod [instance] [constructor] {X Y : Type} [omega_compact.{_ u} X]
     [omega_compact.{u u} Y] : omega_compact.{_ u} (X × Y) :=
   begin
-    intro A f,
-    fapply is_equiv_of_equiv_of_homotopy,
-    { exact calc
+    fapply omega_compact_of_equiv,
+    { intro A f,
+      exact calc
         seq_colim (seq_diagram_arrow_left f (X × Y))
               ≃ seq_colim (seq_diagram_arrow_left (seq_diagram_arrow_left f Y) X) :
                   begin
                     apply seq_colim_equiv (λn, !imp_imp_equiv_prod_imp⁻¹ᵉ),
-                    esimp, intro n f, reflexivity
+                    intro n f, reflexivity
                   end
           ... ≃ (X → seq_colim (seq_diagram_arrow_left f Y))  : !equiv_of_omega_compact
           ... ≃ (X → Y → seq_colim f) : arrow_equiv_arrow_right _ !equiv_of_omega_compact
-          ... ≃ (X × Y → seq_colim f) : imp_imp_equiv_prod_imp},
-    intro g, esimp,
-    apply eq_of_homotopy, intro v, induction v with x y, esimp,
-    induction g with n g n g,
-    { reflexivity},
-    { apply eq_pathover, apply hdeg_square,
+          ... ≃ (X × Y → seq_colim f) : imp_imp_equiv_prod_imp },
+    { intros, induction x with x y, reflexivity },
+    { intros, induction x with x y, apply hdeg_square,
       refine ap_compose (λz, arrow_colim_of_colim_arrow f z y) _ _ ⬝ _,
       refine ap02 _ (ap_compose (λz, arrow_colim_of_colim_arrow _ z x) _ _) ⬝ _,
       refine ap02 _ (ap02 _ !elim_glue) ⬝ _, refine ap02 _ (ap02 _ !idp_con) ⬝ _, esimp,
-      refine ap02 _ !elim_glue ⬝ _, refine !elim_glue ⬝ !elim_glue⁻¹}
+      refine ap02 _ !elim_glue ⬝ _, apply elim_glue }
   end
+
+definition not_omega_compact_nat : ¬(omega_compact.{0 0} ℕ) :=
+assume H,
+let e := equiv_of_omega_compact ℕ seq_diagram_fin ⬝e
+         arrow_equiv_arrow_right _ seq_colim_fin_equiv in
+begin
+--  check_expr e,
+  have Πx, ∥ Σn, Πm, e x m < n ∥,
+  begin
+    intro f, induction f using seq_colim.rec_prop with n f,
+    refine tr ⟨n, _⟩, intro m, exact is_lt (f m)
+  end,
+  induction this (e⁻¹ᵉ id) with x, induction x with n H2,
+  apply lt.irrefl n,
+  refine lt_of_le_of_lt (le_of_eq _) (H2 n),
+  exact ap10 (right_inv e id)⁻¹ n
+end
 
 exit
   print seq_diagram_over

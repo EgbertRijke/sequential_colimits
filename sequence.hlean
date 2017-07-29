@@ -6,31 +6,7 @@ Authors: Floris van Doorn, Egbert Rijke
 
 import types.nat .move_to_lib types.fin types.trunc
 
-open nat eq equiv sigma sigma.ops is_equiv is_trunc trunc
-
-  definition id_rec : ℕ → ℕ :=
-  nat.rec 0 (λn m, succ m)
-
-  -- MOVE
-  definition idontwanttoprovethis (n l k : ℕ) :
-    succ_add (n + l) k ⬝ nat.add_assoc n l (succ k) ⬝ ap
-    (λ z, n + z)
-    (succ_add l k)⁻¹ = nat.add_assoc n (succ l) k :=
-  begin
-    induction k with k IH,
-    { reflexivity},
-    { esimp, refine _ ⬝ ap02 succ IH,
-      apply is_prop.elim }
-  end
-
-  /- replace proof of le_of_succ_le by this -/
-  definition le_step_left {n m : ℕ} (H : succ n ≤ m) : n ≤ m :=
-  by induction H with H m H'; exact le_succ n; exact le.step H'
-
-  /- TODO: make proof of le_succ_of_le simpler -/
-
-  definition nat.add_le_add_left2 {n m : ℕ} (H : n ≤ m) (k : ℕ) : k + n ≤ k + m :=
-  by induction H with m H H₂; reflexivity; exact le.step H₂
+open nat eq equiv sigma sigma.ops is_equiv is_trunc trunc prod
 
 namespace seq_colim
 
@@ -52,7 +28,7 @@ namespace seq_colim
   attribute Seq_diagram.carrier [coercion]
   attribute Seq_diagram.struct [coercion]
 
-  variables {A : ℕ → Type} (f : seq_diagram A)
+  variables {A A' : ℕ → Type} (f : seq_diagram A) (f' : seq_diagram A')
   include f
 
   definition lrep {n m : ℕ} (H : n ≤ m) (x : A n) : A m :=
@@ -62,15 +38,18 @@ namespace seq_colim
     { exact f y }
   end
 
-  definition lrep_irrel {n m m' : ℕ} (H₁ : n ≤ m) (H₂ : n ≤ m') (p : m = m') (x : A n) :
+  definition lrep_irrel_pathover {n m m' : ℕ} (H₁ : n ≤ m) (H₂ : n ≤ m') (p : m = m') (x : A n) :
     lrep f H₁ x =[p] lrep f H₂ x :=
   apo (λm H, lrep f H x) !is_prop.elimo
 
-  definition lrep_irrel_eq {n m : ℕ} (H₁ H₂ : n ≤ m) (x : A n) : lrep f H₁ x = lrep f H₂ x :=
+  definition lrep_irrel {n m : ℕ} (H₁ H₂ : n ≤ m) (x : A n) : lrep f H₁ x = lrep f H₂ x :=
   ap (λH, lrep f H x) !is_prop.elim
 
-  definition lrep_irrel_eq2 {n m : ℕ} (H₁ H₂ : n ≤ m) (x : A n) :
-    lrep_irrel_eq f (le.step H₁) (le.step H₂) x = ap (@f m) (lrep_irrel_eq f H₁ H₂ x) :=
+  definition lrep_eq_transport {n m : ℕ} (H : n ≤ m) (p : n = m) (x : A n) : lrep f H x = transport A p x :=
+  begin induction p, exact lrep_irrel f H (nat.le_refl n) x end
+
+  definition lrep_irrel2 {n m : ℕ} (H₁ H₂ : n ≤ m) (x : A n) :
+    lrep_irrel f (le.step H₁) (le.step H₂) x = ap (@f m) (lrep_irrel f H₁ H₂ x) :=
   begin
     have H₁ = H₂, from !is_prop.elim, induction this,
     refine ap02 _ !is_prop_elim_self ⬝ _ ⬝ ap02 _(ap02 _ !is_prop_elim_self⁻¹),
@@ -197,8 +176,11 @@ namespace seq_colim
     definition seq_diagram_arrow_left [unfold_full] (X : Type) : seq_diagram (λn, X → A n) :=
     λn g x, f (g x)
 
-    definition seq_diagram_fin : seq_diagram fin :=
-    λn, fin.lift_succ
+    definition seq_diagram_prod [unfold_full] : seq_diagram (λn, A n × A' n) :=
+    λn, prod_functor (@f n) (@f' n)
+
+    definition seq_diagram_fin [unfold_full] : seq_diagram fin :=
+    lift_succ2
 
     definition id0_seq [unfold_full] (x y : A 0) : ℕ → Type :=
     λ k, lrep f (zero_le k) x = lrep f (zero_le k) y
@@ -220,30 +202,37 @@ namespace seq_colim
 
   section over
 
-    variable {A}
-    variable (P : Π⦃n⦄, A n → Type)
+  variable {A}
+  variable (P : Π⦃n⦄, A n → Type)
 
-    definition seq_diagram_over : Type := Π⦃n⦄ {a : A n}, P a → P (f a)
+  definition seq_diagram_over : Type := Π⦃n⦄ {a : A n}, P a → P (f a)
 
-    variable (g : seq_diagram_over f P)
-    variables {f P}
+  definition weakened_sequence [unfold_full] : seq_diagram_over f (λn a, A' n) :=
+  λn a a', f' a'
 
-    definition seq_diagram_of_over [unfold_full] {n : ℕ} (a : A n) :
-      seq_diagram (λk, P (lrep f (le_add_right n k) a)) :=
-    λk p, g p
+  definition id0_seq_diagram_over [unfold_full] (x : A 0) :
+    seq_diagram_over f (λk y, lrep f (zero_le k) x = y) :=
+  λk y p, ap (@f k) p
 
-    definition seq_diagram_sigma [unfold 6] : seq_diagram (λn, Σ(x : A n), P x) :=
-    λn v, ⟨f v.1, g v.2⟩
+  variable (g : seq_diagram_over f P)
+  variables {f P}
 
-    variables {n : ℕ} (f P)
+  definition seq_diagram_of_over [unfold_full] {n : ℕ} (a : A n) :
+    seq_diagram (λk, P (lrep f (le_add_right n k) a)) :=
+  λk p, g p
 
-    theorem rep_f_equiv [constructor] (a : A n) (k : ℕ) :
-      P (lrep f (le_add_right (succ n) k) (f a)) ≃ P (lrep f (le_add_right n (succ k)) a) :=
-    equiv_apd011 P (rep_f f k a)
+  definition seq_diagram_sigma [unfold 6] : seq_diagram (λn, Σ(x : A n), P x) :=
+  λn v, ⟨f v.1, g v.2⟩
 
-    theorem rep_rep_equiv [constructor] (a : A n) (k l : ℕ) :
-      P (rep f (l + k) a) ≃ P (rep f k (rep f l a)) :=
-    (equiv_apd011 P (rep_rep f k l a))⁻¹ᵉ
+  variables {n : ℕ} (f P)
+
+  theorem rep_f_equiv [constructor] (a : A n) (k : ℕ) :
+    P (lrep f (le_add_right (succ n) k) (f a)) ≃ P (lrep f (le_add_right n (succ k)) a) :=
+  equiv_apd011 P (rep_f f k a)
+
+  theorem rep_rep_equiv [constructor] (a : A n) (k l : ℕ) :
+    P (rep f (l + k) a) ≃ P (rep f k (rep f l a)) :=
+  (equiv_apd011 P (rep_rep f k l a))⁻¹ᵉ
 
   end over
 

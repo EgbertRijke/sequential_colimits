@@ -2,29 +2,13 @@
 Copyright (c) 2015 Floris van Doorn. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Floris van Doorn, Egbert Rijke
+
+Some proofs are based on proofs by Kristina Sojakova
 -/
 import hit.colimit .sequence cubical.squareover types.arrow .move_to_lib types.equiv
        cubical.pathover2 .squareover
 
 open eq nat sigma sigma.ops quotient equiv pi is_trunc is_equiv fiber function trunc
-
-attribute tro_invo_tro [unfold 9] -- TODO: move
-
---   local attribute is_equiv_compose [reducible]
---   definition right_inv_compose {A B C : Type} (g : B → C) (f : A → B) [is_equiv g] [is_equiv f]
---     /-(H : is_equiv (g ∘ f))-/ (c : C) :
---     @(right_inv (g ∘ f)) !is_equiv_compose c =
---     ap g (right_inv f (g⁻¹ c)) ⬝ right_inv g c :=
--- --ap g (right_inv f (g⁻¹ c)) ⬝
---   _
--- -- exit
-
-/- move this to types.eq -/
-definition total_space_method2 {A : Type} (a₀ : A) (code : A → Type) (H : is_contr (Σa, code a))
-  (c₀ : code a₀) (a : A) : (a₀ = a) ≃ code a :=
-total_space_method a₀ code H (ap pr1 (center_eq ⟨a₀, c₀⟩)) a
-
-
 
 namespace seq_colim
 
@@ -32,7 +16,7 @@ namespace seq_colim
 abbreviation ι  [constructor] := @inclusion
 abbreviation ι' [constructor] [parsing_only] {A} (f n) := @inclusion A f n
 
-variables {A : ℕ → Type} (f : seq_diagram A)
+variables {A A' : ℕ → Type} (f : seq_diagram A) (f' : seq_diagram A')
 
 definition lrep_glue {n m : ℕ} (H : n ≤ m) (a : A n) : ι f (lrep f H a) = ι f a :=
 begin
@@ -56,10 +40,6 @@ begin
 end
 
 set_option pp.binder_types true
-
-definition inv_homotopy_inv_of_homotopy {A B : Type} (f g : A → B) (p : f ~ g)
-  [is_equiv f] [is_equiv g] : f⁻¹ ~ g⁻¹ :=
-λa, ap f⁻¹ ((right_inv g a)⁻¹ ⬝ (p (g⁻¹ a))⁻¹) ⬝ left_inv f (g⁻¹ a)
 
 section
 local attribute is_equiv_lrep [instance] --[priority 500]
@@ -104,8 +84,7 @@ end
 
 /- functorial action and equivalences -/
 section functor
-variable {f}
-variables {A' : ℕ → Type} {f' : seq_diagram A'}
+variables {f f'}
 variables (g : Π⦃n⦄, A n → A' n) (p : Π⦃n⦄ (a : A n), g (f a) = f' (g a))
 include p
 
@@ -196,20 +175,6 @@ begin
   { exact glue f a}
 end
 
--- definition kshift_up (k : ℕ) (a : seq_colim A) : @seq_colim (λn, A (k + n)) (kshift_diag A k) :=
--- begin
---   induction a,
---   { apply ι' n, refine my.add.comm n k ▸ rep k a},
---   { exact sorry}
--- end
-
--- definition kshift_down (k : ℕ) (a : @seq_colim (λn, A (k + n)) (kshift_diag A k)) : seq_colim A :=
--- begin
---   induction a,
---   { exact ι a},
---   { exact glue a}
--- end
-
 -- definition kshift_up' (k : ℕ) (x : seq_colim f) : seq_colim (kshift_diag' f k) :=
 -- begin
 --   induction x,
@@ -293,21 +258,7 @@ equiv.MK (shift_up f)
 
 /- todo: define functions back and forth explicitly -/
 
-definition transport_lemma {A : Type} {C : A → Type} {g₁ : A → A}
-  {x y : A} (p : x = y) (f : Π⦃x⦄, C x → C (g₁ x)) (z : C x) :
-  transport C (ap g₁ p)⁻¹ (f (transport C p z)) = f z :=
-by induction p; reflexivity
-
-definition transport_lemma2 {A : Type} {C : A → Type} {g₁ : A → A}
-  {x y : A} (p : x = y) (f : Π⦃x⦄, C x → C (g₁ x)) (z : C x) :
-  transport C (ap g₁ p) (f z) = f (transport C p z) :=
-by induction p; reflexivity
-
-definition iterate_equiv2 {A : Type} {C : A → Type} (f : A → A) (h : Πa, C a ≃ C (f a))
-  (k : ℕ) (a : A) : C a ≃ C (f^[k] a) :=
-begin induction k with k IH, reflexivity, exact IH ⬝e h (f^[k] a) end
-
-definition kshift'_equiv [constructor] (k : ℕ) : seq_colim f ≃ seq_colim (kshift_diag' f k) :=
+definition kshift'_equiv (k : ℕ) : seq_colim f ≃ seq_colim (kshift_diag' f k) :=
 begin
   induction k with k IH,
   { reflexivity },
@@ -316,7 +267,7 @@ begin
                       (λn a, proof !tr_inv_tr ⬝ !transport_lemma⁻¹ qed) }
 end
 
-definition kshift_equiv_inv [constructor] (k : ℕ) : seq_colim (kshift_diag f k) ≃ seq_colim f :=
+definition kshift_equiv_inv (k : ℕ) : seq_colim (kshift_diag f k) ≃ seq_colim f :=
 begin
   induction k with k IH,
   { exact seq_colim_equiv (λn, equiv_ap A (nat.zero_add n)) (λn a, !transport_lemma2) },
@@ -711,10 +662,6 @@ equiv.MK (colim_sigma_of_sigma_colim g)
 
 end over
 
-definition id0_seq_diagram_over [unfold_full] (x : A 0) :
-  seq_diagram_over f (λk y, lrep f (zero_le k) x = y) :=
-λk y p, ap (@f k) p
-
 definition seq_colim_id_equiv_seq_colim_id0 (x y : A 0) :
   seq_colim (id_seq_diagram f 0 x y) ≃ seq_colim (id0_seq_diagram f x y) :=
 seq_colim_equiv
@@ -743,8 +690,8 @@ begin
   { apply @(is_trunc_equiv_closed_rev _
       (sigma_seq_colim_over_equiv _ _)), apply is_contr_seq_colim },
   { exact ιo _ idp },
-  { apply seq_colim_equiv (λn, eq_equiv_eq_closed !lrep_irrel_eq idp),
-    intro n p, esimp, refine whisker_right _ (!lrep_irrel_eq2⁻² ⬝ !ap_inv⁻¹) ⬝ !ap_con⁻¹ }
+  { apply seq_colim_equiv (λn, eq_equiv_eq_closed !lrep_irrel idp),
+    intro n p, esimp, refine whisker_right _ (!lrep_irrel2⁻² ⬝ !ap_inv⁻¹) ⬝ !ap_con⁻¹ }
 end
 
 definition seq_colim_eq_equiv0 (x y : A 0) : ι f x = ι f y ≃ seq_colim (id0_seq_diagram f x y) :=
@@ -810,5 +757,47 @@ equiv.MK (seq_colim_trunc_of_trunc_seq_colim f k) (trunc_seq_colim_of_seq_colim_
       refine ap_compose (trunc_seq_colim_of_seq_colim_trunc f k) _ _ ⬝ ap02 _ !elim_glue ⬝ _,
       refine !ap_compose'⁻¹ ⬝ !elim_glue }
   end end
+
+/- the sequential colimit of standard finite types is ℕ -/
+open fin
+definition nat_of_seq_colim_fin [unfold 1] (x : seq_colim seq_diagram_fin) : ℕ :=
+begin
+  induction x with n x n x,
+  { exact x },
+  { reflexivity }
+end
+
+definition seq_colim_fin_of_nat (n : ℕ) : seq_colim seq_diagram_fin :=
+ι' _ (n+1) (fin.mk n (self_lt_succ n))
+
+definition lrep_seq_diagram_fin {n : ℕ} (x : fin n) :
+  lrep seq_diagram_fin (is_lt x) (fin.mk x (self_lt_succ x)) = x :=
+begin
+  induction x with k H, esimp, induction H with n H p,
+    reflexivity,
+  exact ap (@lift_succ2 _) p
+end
+
+definition lrep_seq_diagram_fin_lift_succ {n : ℕ} (x : fin n) :
+  lrep_seq_diagram_fin (lift_succ2 x) = ap (@lift_succ2 _) (lrep_seq_diagram_fin x) :=
+begin
+  induction x with k H, reflexivity
+end
+
+definition seq_colim_fin_equiv [constructor] : seq_colim seq_diagram_fin ≃ ℕ :=
+equiv.MK nat_of_seq_colim_fin seq_colim_fin_of_nat
+  abstract begin
+    intro n, reflexivity
+  end end
+  abstract begin
+    intro x, induction x with n x n x,
+    { esimp, refine (lrep_glue _ (is_lt x) _)⁻¹ ⬝ ap (ι _) (lrep_seq_diagram_fin x), },
+    { apply eq_pathover_id_right,
+      refine ap_compose seq_colim_fin_of_nat _ _ ⬝ ap02 _ !elim_glue ⬝ph _,
+      esimp, refine (square_of_eq !con_idp)⁻¹ʰ ⬝h _,
+      refine _ ⬝pv natural_square_tr (@glue _ (seq_diagram_fin) n) (lrep_seq_diagram_fin x),
+      refine ap02 _ !lrep_seq_diagram_fin_lift_succ ⬝ !ap_compose⁻¹ }
+  end end
+
 
 end seq_colim
