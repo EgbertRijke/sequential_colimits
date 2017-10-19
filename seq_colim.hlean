@@ -547,6 +547,8 @@ begin
   { apply pi_pathover_left', intro x,
     refine change_path (whisker_left _ !ap_inv ⬝ !con_inv_cancel_right)
       (_ ⬝o pathover_ap E (dpair _) (apd (Kristina_g g e w) !seq_colim_over_glue⁻¹)),
+    /- we can simplify the squareover we need to fill a bit if we apply this rule here -/
+    -- refine change_path (ap (sigma_eq (glue f a)) !pathover_of_tr_eq_eq_concato ⬝ !sigma_eq_con ⬝ whisker_left _ !ap_dpair⁻¹) _,
     induction x with k x k x,
     { exact change_path !Kristina_dpath_eq (Kristina_gs_path_left g e w x) },
     { apply pathover_pathover,
