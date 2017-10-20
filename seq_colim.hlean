@@ -2,8 +2,6 @@
 Copyright (c) 2015 Floris van Doorn. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Floris van Doorn, Egbert Rijke
-
-Some proofs are based on proofs by Kristina Sojakova
 -/
 import hit.colimit .sequence cubical.squareover types.arrow .move_to_lib types.equiv
        cubical.pathover2 .squareover
@@ -404,7 +402,7 @@ open sigma
 -/
 
 /- the special case of "dpath" we use in the proof -/
-definition Kristina_dpath (k : ℕ) (x : P (rep f k (f a))) :
+definition glue_star (k : ℕ) (x : P (rep f k (f a))) :
   ⟨ι f (f a), ι (seq_diagram_of_over g (f a)) x⟩ =
   ⟨ι f a, ι (seq_diagram_of_over g a) (to_fun (rep_f_equiv f P a k) x)⟩
   :> sigma (seq_colim_over g) :=
@@ -414,47 +412,47 @@ begin
   refine seq_colim_over_glue g (ι (seq_diagram_of_over g (f a)) x)
 end
 
-definition Kristina_dpath_eq (k : ℕ) (x : P (rep f k (f a))) :
-  Kristina_dpath g k x =
+definition glue_star_eq (k : ℕ) (x : P (rep f k (f a))) :
+  glue_star g k x =
   dpair_eq_dpair (glue f a) (pathover_tr (glue f a) (ι (seq_diagram_of_over g (f a)) x)) ⬝
   ap (dpair (ι f a)) (seq_colim_over_glue g (ι (seq_diagram_of_over g (f a)) x)) :=
 ap (sigma_eq _) !pathover_of_tr_eq_eq_concato ⬝ !sigma_eq_con ⬝ whisker_left _ !ap_dpair⁻¹
 
 definition glue' (x : P a) :
   ⟨ι f (f a), ιo g (g x)⟩ = ⟨ι f a, ιo g x⟩ :> sigma (seq_colim_over g) :=
-Kristina_dpath g 0 (g x) ⬝ ap (dpair (ι f a)) (glue (seq_diagram_of_over g a) x)
+glue_star g 0 (g x) ⬝ ap (dpair (ι f a)) (glue (seq_diagram_of_over g a) x)
 
-definition Kristina_gs_step {E : (Σ(x : seq_colim f), seq_colim_over g x) → Type}
+definition g_star_step {E : (Σ(x : seq_colim f), seq_colim_over g x) → Type}
   (e : Πn (a : A n) (x : P a), E ⟨ι f a, ιo g x⟩) {k : ℕ}
   (IH : Π{n} {a : A n} (x : P (rep f k a)), E ⟨ι f a, ι (seq_diagram_of_over g a) x⟩) :
   Σ(gs : Π⦃n : ℕ⦄ {a : A n} (x : P (rep f (k+1) a)), E ⟨ι f a, ι (seq_diagram_of_over g a) x⟩),
   Π⦃n : ℕ⦄ {a : A n} (x : P (rep f k (f a))),
-    pathover E (IH x) (Kristina_dpath g k x) (gs (transporto P (rep_f f k a) x)) :=
+    pathover E (IH x) (glue_star g k x) (gs (transporto P (rep_f f k a) x)) :=
 begin
   fconstructor,
   { intro n a,
     refine equiv_rect (rep_f_equiv f P a k) _ _,
     intro z, refine transport E _ (IH z),
-    exact Kristina_dpath g k z },
+    exact glue_star g k z },
   { intro n a x, exact !pathover_tr ⬝op !equiv_rect_comp⁻¹ }
 end
 
-definition Kristina_gs /- g_* -/ {E : (Σ(x : seq_colim f), seq_colim_over g x) → Type}
+definition g_star /- g_* -/ {E : (Σ(x : seq_colim f), seq_colim_over g x) → Type}
   (e : Πn (a : A n) (x : P a), E ⟨ι f a, ιo g x⟩) {k : ℕ} :
   Π {n : ℕ} {a : A n} (x : P (rep f k a)), E ⟨ι f a, ι (seq_diagram_of_over g a) x⟩ :=
 begin
   induction k with k IH: intro n a x,
   { exact e n a x },
-  { apply (Kristina_gs_step g e @IH).1 }
+  { apply (g_star_step g e @IH).1 }
 end
 
-definition Kristina_gs_path_left {E : (Σ(x : seq_colim f), seq_colim_over g x) → Type}
+definition g_star_path_left {E : (Σ(x : seq_colim f), seq_colim_over g x) → Type}
   (e : Π⦃n⦄ ⦃a : A n⦄ (x : P a), E ⟨ι f a, ιo g x⟩)
   (w : Π⦃n⦄ ⦃a : A n⦄ (x : P a), pathover E (e (g x)) (glue' g x) (e x))
   {k : ℕ} {n : ℕ} {a : A n} (x : P (rep f k (f a))) :
-  pathover E (Kristina_gs g e x) (Kristina_dpath g k x)
-             (Kristina_gs g e (transporto P (rep_f f k a) x)) :=
-by apply (Kristina_gs_step g e (@(Kristina_gs g e) k)).2
+  pathover E (g_star g e x) (glue_star g k x)
+             (g_star g e (transporto P (rep_f f k a) x)) :=
+by apply (g_star_step g e (@(g_star g e) k)).2
 
 /- this is the bottom of the square we have to fill in the end -/
 definition bottom_square {E : (Σ(x : seq_colim f), seq_colim_over g x) → Type}
@@ -483,57 +481,57 @@ move_top_of_right (natural_square
     (glue (seq_diagram_of_over g a) (to_fun (rep_f_equiv f P a k) x)))
 
 /- this is the composition + filler -/
-definition Kristina_gs_path_right_step {E : (Σ(x : seq_colim f), seq_colim_over g x) → Type}
+definition g_star_path_right_step {E : (Σ(x : seq_colim f), seq_colim_over g x) → Type}
   (e : Π⦃n⦄ ⦃a : A n⦄ (x : P a), E ⟨ι f a, ιo g x⟩)
   (w : Π⦃n⦄ ⦃a : A n⦄ (x : P a), pathover E (e (g x)) (glue' g x) (e x))
   (k : ℕ) {n : ℕ} {a : A n} (x : P (rep f k (f a)))
   (IH : Π(n : ℕ) (a : A n) (x : P (rep f k a)),
-  pathover E (Kristina_gs g e (seq_diagram_of_over g a x))
+  pathover E (g_star g e (seq_diagram_of_over g a x))
            (ap (dpair (ι f a)) (glue (seq_diagram_of_over g a) x))
-           (Kristina_gs g e x)) :=
+           (g_star g e x)) :=
 squareover_fill_r
   (bottom_square g e w k x)
-  (change_path (Kristina_dpath_eq g (succ k) (g x)) (Kristina_gs_path_left g e w (g x)) ⬝o
+  (change_path (glue_star_eq g (succ k) (g x)) (g_star_path_left g e w (g x)) ⬝o
     pathover_ap E (dpair (ι f a))
       (pathover_ap (λ (b : seq_colim (seq_diagram_of_over g a)), E ⟨ι f a, b⟩)
-        (ι (seq_diagram_of_over g a)) (apd (Kristina_gs g e) (rep_f_equiv_natural g x))))
-  (change_path (Kristina_dpath_eq g k x) (Kristina_gs_path_left g e w x))
+        (ι (seq_diagram_of_over g a)) (apd (g_star g e) (rep_f_equiv_natural g x))))
+  (change_path (glue_star_eq g k x) (g_star_path_left g e w x))
   (IH (n+1) (f a) x)
 
 /- this is just the composition -/
-definition Kristina_gs_path_right_step1 {E : (Σ(x : seq_colim f), seq_colim_over g x) → Type}
+definition g_star_path_right_step1 {E : (Σ(x : seq_colim f), seq_colim_over g x) → Type}
   (e : Π⦃n⦄ ⦃a : A n⦄ (x : P a), E ⟨ι f a, ιo g x⟩)
   (w : Π⦃n⦄ ⦃a : A n⦄ (x : P a), pathover E (e (g x)) (glue' g x) (e x))
   (k : ℕ) {n : ℕ} {a : A n} (x : P (rep f k (f a)))
   (IH : Π(n : ℕ) (a : A n) (x : P (rep f k a)),
-  pathover E (Kristina_gs g e (seq_diagram_of_over g a x))
+  pathover E (g_star g e (seq_diagram_of_over g a x))
            (ap (dpair (ι f a)) (glue (seq_diagram_of_over g a) x))
-           (Kristina_gs g e x)) :=
-(Kristina_gs_path_right_step g e w k x IH).1
+           (g_star g e x)) :=
+(g_star_path_right_step g e w k x IH).1
 
-definition Kristina_gs_path_right {E : (Σ(x : seq_colim f), seq_colim_over g x) → Type}
+definition g_star_path_right {E : (Σ(x : seq_colim f), seq_colim_over g x) → Type}
   (e : Π⦃n⦄ ⦃a : A n⦄ (x : P a), E ⟨ι f a, ιo g x⟩)
   (w : Π⦃n⦄ ⦃a : A n⦄ (x : P a), pathover E (e (g x)) (glue' g x) (e x))
   (k : ℕ) {n : ℕ} {a : A n} (x : P (rep f k a)) :
-  pathover E (Kristina_gs g e (seq_diagram_of_over g a x))
+  pathover E (g_star g e (seq_diagram_of_over g a x))
            (ap (dpair (ι f a)) (glue (seq_diagram_of_over g a) x))
-           (Kristina_gs g e x) :=
+           (g_star g e x) :=
 begin
   revert n a x, induction k with k IH: intro n a x,
   { exact pathover_cancel_left !pathover_tr⁻¹ᵒ (w x) },
   { revert x, refine equiv_rect (rep_f_equiv f P a k) _ _, intro x,
-    exact Kristina_gs_path_right_step1 g e w k x IH }
+    exact g_star_path_right_step1 g e w k x IH }
 end
 
-definition Kristina_g [unfold 10] {E : (Σ(x : seq_colim f), seq_colim_over g x) → Type}
+definition sigma_colim_rec_point [unfold 10] {E : (Σ(x : seq_colim f), seq_colim_over g x) → Type}
   (e : Π⦃n⦄ ⦃a : A n⦄ (x : P a), E ⟨ι f a, ιo g x⟩)
   (w : Π⦃n⦄ ⦃a : A n⦄ (x : P a), pathover E (e (g x)) (glue' g x) (e x))
   {n : ℕ} {a : A n} (x : seq_colim_over g (ι f a)) : E ⟨ι f a, x⟩ :=
 begin
   induction x with k x k x,
-  { exact Kristina_gs g e x },
+  { exact g_star g e x },
   { apply pathover_of_pathover_ap E (dpair (ι f a)),
-    exact Kristina_gs_path_right g e w k x }
+    exact g_star_path_right g e w k x }
 end
 
 definition sigma_colim_rec {E : (Σ(x : seq_colim f), seq_colim_over g x) → Type}
@@ -543,16 +541,17 @@ definition sigma_colim_rec {E : (Σ(x : seq_colim f), seq_colim_over g x) → Ty
 begin
   induction v with x y,
   induction x with n a n a,
-  { exact Kristina_g g e w y },
+  { exact sigma_colim_rec_point g e w y },
   { apply pi_pathover_left', intro x,
     refine change_path (whisker_left _ !ap_inv ⬝ !con_inv_cancel_right)
-      (_ ⬝o pathover_ap E (dpair _) (apd (Kristina_g g e w) !seq_colim_over_glue⁻¹)),
+      (_ ⬝o pathover_ap E (dpair _) (apd (sigma_colim_rec_point g e w) !seq_colim_over_glue⁻¹)),
     /- we can simplify the squareover we need to fill a bit if we apply this rule here -/
     -- refine change_path (ap (sigma_eq (glue f a)) !pathover_of_tr_eq_eq_concato ⬝ !sigma_eq_con ⬝ whisker_left _ !ap_dpair⁻¹) _,
     induction x with k x k x,
-    { exact change_path !Kristina_dpath_eq (Kristina_gs_path_left g e w x) },
+    -- { exact g_star_path_left g e w x },
+   { exact change_path !glue_star_eq (g_star_path_left g e w x) },
     { apply pathover_pathover,
-      refine _ ⬝hop (ap (pathover_ap E _) (apd_compose2 (Kristina_g g e w) _ _) ⬝
+      refine _ ⬝hop (ap (pathover_ap E _) (apd_compose2 (sigma_colim_rec_point g e w) _ _) ⬝
         pathover_ap_pathover_of_pathover_ap E (dpair (ι f a)) (seq_colim_over_equiv g a) _)⁻¹,
       apply squareover_change_path_right',
       refine _ ⬝hop !pathover_ap_change_path⁻¹ ⬝ ap (pathover_ap E _)
@@ -565,7 +564,7 @@ begin
       refine _ ⬝hop (ap (pathover_ap E _) !rec_glue ⬝ to_right_inv !pathover_compose _)⁻¹,
       refine ap (pathover_ap E _) !rec_glue ⬝ to_right_inv !pathover_compose _ ⬝pho _,
       refine _ ⬝hop !equiv_rect_comp⁻¹,
-      exact (Kristina_gs_path_right_step g e w k x @(Kristina_gs_path_right g e w k)).2 }}
+      exact (g_star_path_right_step g e w k x @(g_star_path_right g e w k)).2 }}
 end
 
 /- We now define the map back, and show using this induction principle that the composites are the identity -/
