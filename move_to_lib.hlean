@@ -78,6 +78,10 @@ definition sigma_eq_pr2_constant2 {A B : Type} {a a' : A} {b b' : B} (p : a = a'
   (q : b = b') : ap pr2 (sigma_eq p (pathover_of_eq p q)) = q :=
 by induction p; induction q; reflexivity
 
+definition sigma_eq_concato_eq {A : Type} {B : A → Type} {a a' : A} {b : B a} {b₁ b₂ : B a'}
+  (p : a = a') (q : b =[p] b₁) (q' : b₁ = b₂) : sigma_eq p (q ⬝op q') = sigma_eq p q ⬝ ap (dpair a') q' :=
+by induction q'; reflexivity
+
 definition eq_of_pathover_apo {A C : Type} {B : A → Type} {a a' : A} {b : B a} {b' : B a'}
   {p : a = a'} (g : Πa, B a → C) (q : b =[p] b') :
   eq_of_pathover (apo g q) = apd011 g p q :=

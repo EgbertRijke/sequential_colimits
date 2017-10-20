@@ -352,7 +352,7 @@ definition ιo [constructor] (p : P a) : seq_colim_over g (ι f a) :=
 --   end) end
 
 variable {P}
-theorem seq_colim_over_glue (x : seq_colim_over g (ι f (f a)))
+theorem seq_colim_over_glue /- r -/ (x : seq_colim_over g (ι f (f a)))
   : transport (seq_colim_over g) (glue f a) x = shift_down _ (over_f_equiv g a x) :=
 ap10 (elim_type_glue _ _ _ a) x
 
@@ -365,14 +365,26 @@ pathover_of_tr_eq !seq_colim_over_glue
 
 -- we can define a function from the colimit of total spaces to the total space of the colimit.
 
+/- TO DO: define glue' in the same way as glue' -/
+definition glue' (p : P a) : ⟨ι f (f a), ιo g (g p)⟩ = ⟨ι f a, ιo g p⟩ :=
+sigma_eq (glue f a) (glue_over g (g p) ⬝op glue (seq_diagram_of_over g a) p)
+
+definition glue_star (k : ℕ) (x : P (rep f k (f a))) :
+  ⟨ι f (f a), ι (seq_diagram_of_over g (f a)) x⟩ =
+  ⟨ι f a, ι (seq_diagram_of_over g a) (to_fun (rep_f_equiv f P a k) x)⟩
+  :> sigma (seq_colim_over g) :=
+begin
+  apply dpair_eq_dpair (glue f a),
+  apply pathover_of_tr_eq,
+  refine seq_colim_over_glue g (ι (seq_diagram_of_over g (f a)) x)
+end
+
 definition sigma_colim_of_colim_sigma [unfold 5] (a : seq_colim (seq_diagram_sigma g)) :
   Σ(x : seq_colim f), seq_colim_over g x :=
 begin
 induction a with n v n v,
 { induction v with a p, exact ⟨ι f a, ιo g p⟩},
-{ induction v with a p, fapply sigma_eq,
-    apply glue,
-    exact glue_over g (g p) ⬝op glue _ p}
+{ induction v with a p, exact glue' g p }
 end
 
 definition colim_sigma_triangle [unfold 5] (a : seq_colim (seq_diagram_sigma g)) :
@@ -413,26 +425,11 @@ open sigma
   g   | sigma_colim_rec_point
 -/
 
-/- the special case of "dpath" we use in the proof -/
-definition glue_star (k : ℕ) (x : P (rep f k (f a))) :
-  ⟨ι f (f a), ι (seq_diagram_of_over g (f a)) x⟩ =
-  ⟨ι f a, ι (seq_diagram_of_over g a) (to_fun (rep_f_equiv f P a k) x)⟩
-  :> sigma (seq_colim_over g) :=
-begin
-  apply dpair_eq_dpair (glue f a),
-  apply pathover_of_tr_eq,
-  refine seq_colim_over_glue g (ι (seq_diagram_of_over g (f a)) x)
-end
-
 definition glue_star_eq (k : ℕ) (x : P (rep f k (f a))) :
   glue_star g k x =
   dpair_eq_dpair (glue f a) (pathover_tr (glue f a) (ι (seq_diagram_of_over g (f a)) x)) ⬝
   ap (dpair (ι f a)) (seq_colim_over_glue g (ι (seq_diagram_of_over g (f a)) x)) :=
 ap (sigma_eq _) !pathover_of_tr_eq_eq_concato ⬝ !sigma_eq_con ⬝ whisker_left _ !ap_dpair⁻¹
-
-definition glue' (x : P a) :
-  ⟨ι f (f a), ιo g (g x)⟩ = ⟨ι f a, ιo g x⟩ :> sigma (seq_colim_over g) :=
-glue_star g 0 (g x) ⬝ ap (dpair (ι f a)) (glue (seq_diagram_of_over g a) x)
 
 definition g_star_step {E : (Σ(x : seq_colim f), seq_colim_over g x) → Type}
   (e : Πn (a : A n) (x : P a), E ⟨ι f a, ιo g x⟩) {k : ℕ}
@@ -521,7 +518,8 @@ definition g_star_path_right {E : (Σ(x : seq_colim f), seq_colim_over g x) → 
            (g_star g e x) :=
 begin
   revert n a x, induction k with k IH: intro n a x,
-  { exact pathover_cancel_left !pathover_tr⁻¹ᵒ (w x) },
+  { exact abstract begin refine pathover_cancel_left !pathover_tr⁻¹ᵒ (change_path _ (w x)),
+    apply sigma_eq_concato_eq end end },
   { revert x, refine equiv_rect (rep_f_equiv f P a k) _ _, intro x,
     exact g_star_path_right_step1 g e w k x IH }
 end
@@ -537,8 +535,6 @@ begin
     exact g_star_path_right g e w k x }
 end
 
-print apd
-print pathover_ap
 definition sigma_colim_rec {E : (Σ(x : seq_colim f), seq_colim_over g x) → Type}
   (e : Π⦃n⦄ ⦃a : A n⦄ (x : P a), E ⟨ι f a, ιo g x⟩)
   (w : Π⦃n⦄ ⦃a : A n⦄ (x : P a), pathover E (e (g x)) (glue' g x) (e x))
@@ -582,7 +578,7 @@ begin
   { apply glue}
 end
 
-definition colim_sigma_of_sigma_colim_path1 {k : ℕ} (p : P (rep f k (f a))) :
+definition colim_sigma_of_sigma_colim_path1 /- μ -/ {k : ℕ} (p : P (rep f k (f a))) :
   ι (seq_diagram_sigma g) ⟨rep f k (f a), p⟩ =
   ι (seq_diagram_sigma g) ⟨rep f (succ k) a, transporto P (rep_f f k a) p⟩ :=
 begin
@@ -621,6 +617,20 @@ begin
   apply eq_pathover, apply colim_sigma_of_sigma_colim_path2
 end
 
+/- TODO: prove and merge these theorems -/
+definition colim_sigma_of_sigma_colim_glue' [unfold 5] (p : P a)
+  : ap (colim_sigma_of_sigma_colim g) (glue' g p) = glue (seq_diagram_sigma g) ⟨a, p⟩ :=
+begin
+  refine !ap_dpair_eq_dpair ⬝ _,
+  refine !apd011_eq_apo11_apd ⬝ _,
+  refine ap (λx, apo11_constant_right x _) !rec_glue ⬝ _,
+  refine !apo11_arrow_pathover_constant_right ⬝ _, esimp,
+  refine whisker_right _ !idp_con ⬝ _,
+  rewrite [▸*, tr_eq_of_pathover_concato_eq, ap_con, ↑glue_over,
+           to_right_inv !pathover_equiv_tr_eq, ap_inv, inv_con_cancel_left],
+  apply elim_glue
+end
+
 theorem colim_sigma_of_sigma_colim_of_colim_sigma (a : seq_colim (seq_diagram_sigma g)) :
   colim_sigma_of_sigma_colim g (sigma_colim_of_colim_sigma g a) = a :=
 begin
@@ -628,15 +638,7 @@ induction a with n v n v,
 { induction v with a p, reflexivity },
 { induction v with a p, esimp, apply eq_pathover_id_right, apply hdeg_square,
   refine ap_compose (colim_sigma_of_sigma_colim g) _ _ ⬝ _,
-  refine ap02 _ !elim_glue ⬝ _, esimp,
-  refine !ap_dpair_eq_dpair ⬝ _,
-  refine !apd011_eq_apo11_apd ⬝ _,
-  refine ap (λx, apo11_constant_right x _) !rec_glue ⬝ _,
-  refine !apo11_arrow_pathover_constant_right ⬝ _,
-  rewrite [▸*, tr_eq_of_pathover_concato_eq, ap_con, ↑glue_over,
-           to_right_inv !pathover_equiv_tr_eq, ap_inv, con.assoc, inv_con_cancel_left],
-  refine whisker_left _ !elim_glue ⬝ _,
-  apply idp_con }
+  refine ap02 _ !elim_glue ⬝ _, exact colim_sigma_of_sigma_colim_glue' g p }
 end
 
 theorem sigma_colim_of_colim_sigma_of_sigma_colim (v : Σ(x : seq_colim f), seq_colim_over g x)
@@ -646,13 +648,8 @@ begin
   { intro n a x, reflexivity },
   { intro n a x, apply eq_pathover_id_right, apply hdeg_square,
     refine ap_compose (sigma_colim_of_colim_sigma g) _ _ ⬝ _,
-    refine ap02 _ (!ap_con ⬝ (!ap_dpair_eq_dpair ⬝ !apd011_eq_apo11_apd ⬝
-      ap (λx, apo11_constant_right x _) !rec_glue ⬝ !apo11_arrow_pathover_constant_right ⬝
-      begin rewrite [▸*, ap_inv, to_right_inv !pathover_equiv_tr_eq, inv_con_cancel_right],
-        reflexivity end) ◾ (!ap_compose'⁻¹ ⬝ !elim_glue)) ⬝ _,
-    refine !ap_con ⬝ !idp_con ⬝ !elim_glue ⬝ _,
-    refine _ ⬝ !sigma_eq_con ⬝ whisker_left _ !ap_dpair⁻¹,
-    exact ap (sigma_eq _) !concato_eq_eq }
+    refine ap02 _ (colim_sigma_of_sigma_colim_glue' g x) ⬝ _,
+    apply elim_glue }
 end
 
 variable (P)
