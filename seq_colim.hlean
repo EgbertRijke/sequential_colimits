@@ -313,6 +313,16 @@ seq_colim_equiv (rep_f_equiv f P a) (λk p, rep_f_equiv_natural g p)
 definition seq_colim_over_equiv :
   seq_colim (seq_diagram_of_over g (f a)) ≃ seq_colim (seq_diagram_of_over g a) :=
 over_f_equiv g a ⬝e (shift_equiv (seq_diagram_of_over g a))⁻¹ᵉ
+
+definition seq_colim_over_equiv_glue {k : ℕ} (x : P (rep f k (f a))) :
+  ap (seq_colim_over_equiv g a) (glue (seq_diagram_of_over g (f a)) x) =
+  ap (ι' (seq_diagram_of_over g a) (k+2)) (rep_f_equiv_natural g x) ⬝
+  glue (seq_diagram_of_over g a) (rep_f f k a ▸o x) :=
+begin
+  refine ap_compose (shift_down (seq_diagram_of_over g a)) _ _ ⬝ _,
+  exact ap02 _ !elim_glue ⬝ !ap_con ⬝ !ap_compose'⁻¹ ◾ !elim_glue
+end
+
 variable {a}
 
 include g
@@ -390,15 +400,17 @@ open sigma
   dictionary:
   Kristina | Lean
   VARIABLE NAMES (A, P, k, n, e, w are the same)
-  x : A_n | a : A n
-  a : A_n → A_{n+1} | f : A n → A (n+1)
-  y : P(n, x) | x : P a (maybe other variables)
+  x : A_n                     | a : A n
+  a : A_n → A_{n+1}           | f : A n → A (n+1)
+  y : P(n, x)                 | x : P a (maybe other variables)
   f : P(n, x) → P(n+1, a_n x) | g : P a → P (f a)
   DEFINITION NAMES
-  κ | glue
-  U | rep_f_equiv : P (n+1+k, rep f k (f x)) ≃ P (n+k+1, rep f (k+1) x)
-  δ | rep_f_equiv_natural
-  F | over_f_equiv g a ⬝e (shift_equiv (λk, P (rep f k a)) (seq_diagram_of_over g a))⁻¹ᵉ
+  κ   | glue
+  U   | rep_f_equiv : P (n+1+k, rep f k (f x)) ≃ P (n+k+1, rep f (k+1) x)
+  δ   | rep_f_equiv_natural
+  F   | over_f_equiv g a ⬝e (shift_equiv (λk, P (rep f k a)) (seq_diagram_of_over g a))⁻¹ᵉ
+  g_* | g_star
+  g   | sigma_colim_rec_point
 -/
 
 /- the special case of "dpath" we use in the proof -/
@@ -465,16 +477,7 @@ move_top_of_right (natural_square
     (glue (seq_diagram_of_over g (f a)) x) ⬝hp
   ap_compose (dpair (ι f a)) (to_fun (seq_colim_over_equiv g a))
     (glue (seq_diagram_of_over g (f a)) x) ⬝hp
-  (ap02 (dpair (ι f a))
-    (ap_compose (shift_down (seq_diagram_of_over g a)) (to_fun (over_f_equiv g a))
-      (glue (seq_diagram_of_over g (f a)) x) ⬝
-    ap02 (shift_down (seq_diagram_of_over g a)) (elim_glue _ _ _ x) ⬝
-    ap_con (shift_down (seq_diagram_of_over g a))
-      (ap (ι (shift_diag (seq_diagram_of_over g a))) (rep_f_equiv_natural g x))
-      (glue (shift_diag (seq_diagram_of_over g a)) (to_fun (rep_f_equiv f P a k) x)) ⬝
-    (ap_compose' (shift_down (seq_diagram_of_over g a)) (ι (shift_diag (seq_diagram_of_over g a)))
-      (rep_f_equiv_natural g x))⁻¹ ◾
-    elim_glue (shift_diag (seq_diagram_of_over g a)) _ _ (to_fun (rep_f_equiv f P a k) x))⁻¹)⁻¹ ⬝hp
+  (ap02 (dpair (ι f a)) (seq_colim_over_equiv_glue g a x)⁻¹)⁻¹ ⬝hp
   ap_con (dpair (ι f a))
     (ap (λx, shift_down (seq_diagram_of_over g a) (ι (shift_diag (seq_diagram_of_over g a)) x))
       (rep_f_equiv_natural g x))
@@ -523,7 +526,7 @@ begin
     exact g_star_path_right_step1 g e w k x IH }
 end
 
-definition sigma_colim_rec_point [unfold 10] {E : (Σ(x : seq_colim f), seq_colim_over g x) → Type}
+definition sigma_colim_rec_point [unfold 10] /- g -/ {E : (Σ(x : seq_colim f), seq_colim_over g x) → Type}
   (e : Π⦃n⦄ ⦃a : A n⦄ (x : P a), E ⟨ι f a, ιo g x⟩)
   (w : Π⦃n⦄ ⦃a : A n⦄ (x : P a), pathover E (e (g x)) (glue' g x) (e x))
   {n : ℕ} {a : A n} (x : seq_colim_over g (ι f a)) : E ⟨ι f a, x⟩ :=
@@ -534,6 +537,8 @@ begin
     exact g_star_path_right g e w k x }
 end
 
+print apd
+print pathover_ap
 definition sigma_colim_rec {E : (Σ(x : seq_colim f), seq_colim_over g x) → Type}
   (e : Π⦃n⦄ ⦃a : A n⦄ (x : P a), E ⟨ι f a, ιo g x⟩)
   (w : Π⦃n⦄ ⦃a : A n⦄ (x : P a), pathover E (e (g x)) (glue' g x) (e x))
@@ -548,15 +553,14 @@ begin
     /- we can simplify the squareover we need to fill a bit if we apply this rule here -/
     -- refine change_path (ap (sigma_eq (glue f a)) !pathover_of_tr_eq_eq_concato ⬝ !sigma_eq_con ⬝ whisker_left _ !ap_dpair⁻¹) _,
     induction x with k x k x,
+    { exact change_path !glue_star_eq (g_star_path_left g e w x) },
     -- { exact g_star_path_left g e w x },
-   { exact change_path !glue_star_eq (g_star_path_left g e w x) },
-    { apply pathover_pathover,
+    { apply pathover_pathover, esimp,
       refine _ ⬝hop (ap (pathover_ap E _) (apd_compose2 (sigma_colim_rec_point g e w) _ _) ⬝
         pathover_ap_pathover_of_pathover_ap E (dpair (ι f a)) (seq_colim_over_equiv g a) _)⁻¹,
       apply squareover_change_path_right',
       refine _ ⬝hop !pathover_ap_change_path⁻¹ ⬝ ap (pathover_ap E _)
-        (apd02 _ (ap_compose (shift_down (seq_diagram_of_over g a)) _ _ ⬝ ap02 _ !elim_glue ⬝
-        !ap_con ⬝ !ap_compose'⁻¹ ◾ !elim_glue)⁻¹),
+        (apd02 _ !seq_colim_over_equiv_glue⁻¹),
       apply squareover_change_path_right,
       refine _ ⬝hop (ap (pathover_ap E _) (!apd_con ⬝ (!apd_ap ◾o idp)) ⬝ !pathover_ap_cono)⁻¹,
       apply squareover_change_path_right',
@@ -594,12 +598,10 @@ square (colim_sigma_of_sigma_colim_path1 g (g p)) (colim_sigma_of_sigma_colim_pa
     (glue (seq_diagram_of_over g (f a)) p)) :=
 begin
   refine !elim_glue ⬝ph _,
-  refine _ ⬝hp (ap_compose' (colim_sigma_of_sigma_colim_constructor g ∘ shift_down _) _ _)⁻¹,
-  refine _ ⬝hp ap02 _ !elim_glue⁻¹,
+  refine _ ⬝hp (ap_compose' (colim_sigma_of_sigma_colim_constructor g) _ _)⁻¹,
+  refine _ ⬝hp ap02 _ !seq_colim_over_equiv_glue⁻¹,
   refine _ ⬝hp !ap_con⁻¹,
-  refine _ ⬝hp (!ap_compose' ◾ (ap_compose _ _ _)⁻¹),
-  refine _ ⬝hp whisker_left _ (ap02 _ !elim_glue⁻¹),
-  refine _ ⬝hp whisker_left _ !elim_glue⁻¹,
+  refine _ ⬝hp !ap_compose' ◾ !elim_glue⁻¹,
   refine _ ⬝pv whisker_rt _ (natural_square0111 P (pathover_tro (rep_f f k a) p) g
                                                   (λn a p, glue (seq_diagram_sigma g) ⟨a, p⟩)),
   refine _ ⬝ whisker_left _ (ap02 _ !inv_inv⁻¹ ⬝ !ap_inv),
