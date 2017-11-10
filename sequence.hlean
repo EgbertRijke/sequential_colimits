@@ -125,6 +125,9 @@ namespace seq_colim
   definition rep (m : ℕ) (a : A n) : A (n + m) :=
   lrep f (le_add_right n m) a
 
+  definition rep0 (m : ℕ) (a : A 0) : A m :=
+  lrep f (zero_le m) a
+
   -- definition old_rep (m : ℕ) (a : A n) : A (n + m) :=
   -- by induction m with m y; exact a; exact f y
 
@@ -183,10 +186,10 @@ namespace seq_colim
     lift_succ2
 
     definition id0_seq [unfold_full] (a₁ a₂ : A 0) : ℕ → Type :=
-    λ k, lrep f (zero_le k) a₁ = lrep f (zero_le k) a₂
+    λ k, rep0 f k a₁ = lrep f (zero_le k) a₂
 
     definition id0_seq_diagram [unfold_full] (a₁ a₂ : A 0) : seq_diagram (id0_seq f a₁ a₂) :=
-    λ (k : ℕ) (p : lrep f (zero_le k) a₁ = lrep f (zero_le k) a₂), ap (@f k) p
+    λ (k : ℕ) (p : rep0 f k a₁ = rep0 f k a₂), ap (@f k) p
 
     definition id_seq [unfold_full] (n : ℕ) (a₁ a₂ : A n) : ℕ → Type :=
     λ k, rep f k a₁ = rep f k a₂
@@ -241,5 +244,19 @@ namespace seq_colim
   definition seq_diagram_pi {X : Type} {A : X → ℕ → Type} (g : Π⦃x n⦄, A x n → A x (succ n)) :
     seq_diagram (λn, Πx, A x n) :=
   λn f x, g (f x)
+
+  definition seq_diagram_over_fiber (g : Π⦃n⦄, A n → A' n)
+    (p : Π⦃n⦄ (a : A n), g (f a) = f' (g a)) : seq_diagram_over f' (λn, fiber (@g n)) :=
+  λk a, fiber_functor (@f k) (@f' k) (@p k) idp
+
+  definition seq_diagram_fiber (g : Π⦃n⦄, A n → A' n) (p : Π⦃n⦄ (a : A n), g (f a) = f' (g a))
+    {n : ℕ} (a : A' n) : seq_diagram (λk, fiber (@g (n + k)) (rep f' k a)) :=
+  seq_diagram_of_over (seq_diagram_over_fiber f f' g p) a
+
+  -- definition seq_diagram_fiber_eq (g : Π⦃n⦄, A n → A' n) (p : Π⦃n⦄ (a : A n), g (f a) = f' (g a))
+  --   {n : ℕ} (a : A' n) :
+  --   seq_diagram_fiber f f' g p a = seq_diagram_of_over (seq_diagram_over_fiber f f' g p) a :=
+  -- idp
+
 
 end seq_colim

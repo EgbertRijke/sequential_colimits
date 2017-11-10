@@ -6,7 +6,7 @@ Authors: Floris van Doorn, Egbert Rijke
 
 -- these definitions and theorems should be moved to the HoTT library
 
-import types.equiv cubical.pathover2 eq2 types.eq types.fin
+import types.equiv cubical.pathover2 eq2 types.eq types.fin types.pointed2
 open eq nat algebra is_equiv equiv function sigma is_trunc fin
 
 attribute tro_invo_tro [unfold 9] -- TODO: move
@@ -101,3 +101,17 @@ by induction q; reflexivity
 
 definition lift_succ2 [constructor] ⦃n : ℕ⦄ (x : fin n) : fin (succ n) :=
 fin.mk x (le.step (is_lt x))
+
+open fiber pointed
+definition fiber_functor [constructor] {A A' B B' : Type} {f : A → B} {f' : A' → B'} {b : B} {b' : B'}
+  (g : A → A') (h : B → B') (H : hsquare g h f f') (p : h b = b') (x : fiber f b) : fiber f' b' :=
+fiber.mk (g (point x)) (H (point x) ⬝ ap h (point_eq x) ⬝ p)
+
+definition pfiber_functor [constructor] {A A' B B' : Type*} {f : A →* B} {f' : A' →* B'}
+  (g : A →* A') (h : B →* B') (H : psquare g h f f') : pfiber f →* pfiber f' :=
+pmap.mk (fiber_functor g h H (respect_pt h))
+  begin
+    fapply fiber_eq,
+      exact respect_pt g,
+      exact !con.assoc ⬝ to_homotopy_pt H
+  end
