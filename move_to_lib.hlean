@@ -20,10 +20,22 @@ attribute tro_invo_tro [unfold 9] -- TODO: move
   definition nat.add_le_add_left2 {n m : ℕ} (H : n ≤ m) (k : ℕ) : k + n ≤ k + m :=
   by induction H with m H H₂; reflexivity; exact le.step H₂
 
+  -- definition le_add_right2 (n k : ℕ) : n ≤ n + k :=
+  -- by induction H with m H H₂
+
+  -- example : le_add_right 0 = (λn, nat.zero_le (0+n)) :=
+  -- idp
+
 /- move this to types.eq -/
 definition total_space_method2 {A : Type} (a₀ : A) (code : A → Type) (H : is_contr (Σa, code a))
   (c₀ : code a₀) (a : A) : (a₀ = a) ≃ code a :=
 total_space_method a₀ code H (ap pr1 (center_eq ⟨a₀, c₀⟩)) a
+
+definition total_space_method2_refl {A : Type} (a₀ : A) (code : A → Type) (H : is_contr (Σa, code a))
+  (c₀ : code a₀) : total_space_method2 a₀ code H c₀ a₀ idp = c₀ :=
+begin
+   exact sorry --esimp [total_space_method2, total_space_method, eq.encode],
+end
 
 definition equiv_pathover2 {A : Type} {a a' : A} (p : a = a')
   {B : A → Type} {C : A → Type} (f : B a ≃ C a) (g : B a' ≃ C a')

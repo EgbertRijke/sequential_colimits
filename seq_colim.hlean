@@ -283,9 +283,14 @@ definition kshift_equiv [constructor] (k : ℕ) : seq_colim f ≃ seq_colim (ksh
 
 -- end
 
-definition seq_colim_constant_seq (X : Type) : seq_colim (constant_seq X) ≃ X :=
-(equiv.mk _ (is_equiv_ι _ (λn, !is_equiv_id)))⁻¹ᵉ
+variable {f}
+definition equiv_of_is_equiseq [constructor] (H : is_equiseq f) : seq_colim f ≃ A 0 :=
+(equiv.mk _ (is_equiv_ι _ H))⁻¹ᵉ
 
+definition seq_colim_constant_seq [constructor] (X : Type) : seq_colim (constant_seq X) ≃ X :=
+equiv_of_is_equiseq (λn, !is_equiv_id)
+
+variable (f)
 definition is_contr_seq_colim {A : ℕ → Type} (f : seq_diagram A)
   [Πk, is_contr (A k)] : is_contr (seq_colim f) :=
 begin
@@ -298,8 +303,8 @@ end
 section over
 
 universe variable v
-variable {f}
 variables {P : Π⦃n⦄, A n → Type.{v}} (g : seq_diagram_over f P) {n : ℕ} {a : A n}
+variable {f}
 
 definition rep_f_equiv_natural {k : ℕ} (p : P (rep f k (f a))) :
   transporto P (rep_f f (succ k) a) (g p) = g (transporto P (rep_f f k a) p) :=
@@ -684,14 +689,25 @@ definition incl_kshift_diag0 {n : ℕ} (x : A n) :
   ι' (kshift_diag f n) 0 x = kshift_equiv f n (ι f x) :=
 incl_kshift_diag f x
 
-definition seq_colim_eq_equiv0' (x y : A 0) : ι f x = ι f y ≃ seq_colim (id_seq_diagram f 0 x y) :=
+definition seq_colim_eq_equiv0' (a₀ a₁ : A 0) : ι f a₀ = ι f a₁ ≃ seq_colim (id_seq_diagram f 0 a₀ a₁) :=
 begin
-  refine total_space_method2 (ι f x) (seq_colim_over (id0_seq_diagram_over f x)) _ _ (ι f y) ⬝e _,
+  refine total_space_method2 (ι f a₀) (seq_colim_over (id0_seq_diagram_over f a₀)) _ _ (ι f a₁) ⬝e _,
   { apply @(is_trunc_equiv_closed_rev _
       (sigma_seq_colim_over_equiv _ _)), apply is_contr_seq_colim },
   { exact ιo _ idp },
-  { apply seq_colim_equiv (λn, eq_equiv_eq_closed !lrep_irrel idp),
-    intro n p, esimp, refine whisker_right _ (!lrep_irrel2⁻² ⬝ !ap_inv⁻¹) ⬝ !ap_con⁻¹ }
+  /-
+    In the next equivalence we have to show that
+      seq_colim_over (id0_seq_diagram_over f a₀) (ι f a₁) ≃ seq_colim (id_seq_diagram f 0 a₀ a₁).
+    This looks trivial, because both of them reduce to
+      seq_colim (f^{0 ≤ 0+k}(a₀) = f^{0 ≤ 0+k}(a₁), ap_f).
+    However, not all proofs of these inequalities are definitionally equal. 3 of them are proven by
+      zero_le : 0 ≤ n,
+    but one of them (the RHS of seq_colim_over (id0_seq_diagram_over f a₀) (ι f a₁)) uses
+      le_add_right : n ≤ n+k
+    Alternatively, we could redefine le_add_right so that for n=0, it reduces to `zero_le (0+k)`.
+  -/
+  { refine seq_colim_equiv (λn, eq_equiv_eq_closed !lrep_irrel idp) _,
+    intro n p, refine whisker_right _ (!lrep_irrel2⁻² ⬝ !ap_inv⁻¹) ⬝ !ap_con⁻¹ }
 end
 
 definition seq_colim_eq_equiv0 (x y : A 0) : ι f x = ι f y ≃ seq_colim (id0_seq_diagram f x y) :=
@@ -707,7 +723,8 @@ seq_colim_eq_equiv0' (kshift_diag f n) x y ⬝e
   (λm p, whisker_right _ (whisker_right _ !ap_inv⁻¹ ⬝ !ap_con⁻¹) ⬝ !ap_con⁻¹) ⬝e
 seq_colim_equiv
   (λm, !lrep_eq_lrep_irrel (ap (add n) (nat.zero_add m)))
-  begin intro m q,
+  begin
+    intro m q,
     refine _ ⬝ lrep_eq_lrep_irrel_natural f (le_add_right n m) (ap (add n) (nat.zero_add m)) q,
     exact ap (λx, lrep_eq_lrep_irrel f _ _ _ _ x _) !is_prop.elim
   end
@@ -799,5 +816,22 @@ equiv.MK nat_of_seq_colim_fin seq_colim_fin_of_nat
       refine ap02 _ !lrep_seq_diagram_fin_lift_succ ⬝ !ap_compose⁻¹ }
   end end
 
+/- the sequential colimit of embeddings is an embedding -/
+
+definition seq_colim_eq_equiv0'_inv_refl (a₀ : A 0) :
+  (seq_colim_eq_equiv0' f a₀ a₀)⁻¹ᵉ (ι' (id_seq_diagram f 0 a₀ a₀) 0 proof (refl a₀) qed) = refl (ι f a₀) :=
+begin
+  apply inv_eq_of_eq,
+  symmetry,
+  exact ap (seq_colim_functor _ _) !total_space_method2_refl
+end
+
+definition is_embedding_ι (H : Πn, is_embedding (@f n)) : is_embedding (ι' f 0) :=
+begin
+  intro x y, fapply is_equiv_of_equiv_of_homotopy,
+  { symmetry, refine seq_colim_eq_equiv0' f x y ⬝e _,
+    apply equiv_of_is_equiseq, intro n, apply H },
+  { intro p, induction p, apply seq_colim_eq_equiv0'_inv_refl }
+end
 
 end seq_colim
