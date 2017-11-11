@@ -245,18 +245,18 @@ namespace seq_colim
     seq_diagram (λn, Πx, A x n) :=
   λn f x, g (f x)
 
+  variables {f f'}
   definition seq_diagram_over_fiber (g : Π⦃n⦄, A n → A' n)
     (p : Π⦃n⦄ (a : A n), g (f a) = f' (g a)) : seq_diagram_over f' (λn, fiber (@g n)) :=
   λk a, fiber_functor (@f k) (@f' k) (@p k) idp
 
   definition seq_diagram_fiber (g : Π⦃n⦄, A n → A' n) (p : Π⦃n⦄ (a : A n), g (f a) = f' (g a))
     {n : ℕ} (a : A' n) : seq_diagram (λk, fiber (@g (n + k)) (rep f' k a)) :=
-  seq_diagram_of_over (seq_diagram_over_fiber f f' g p) a
+  seq_diagram_of_over (seq_diagram_over_fiber g p) a
 
-  -- definition seq_diagram_fiber_eq (g : Π⦃n⦄, A n → A' n) (p : Π⦃n⦄ (a : A n), g (f a) = f' (g a))
-  --   {n : ℕ} (a : A' n) :
-  --   seq_diagram_fiber f f' g p a = seq_diagram_of_over (seq_diagram_over_fiber f f' g p) a :=
-  -- idp
+  definition seq_diagram_fiber0 (g : Π⦃n⦄, A n → A' n) (p : Π⦃n⦄ (a : A n), g (f a) = f' (g a))
+    (a : A' 0) : seq_diagram (λk, fiber (@g k) (rep0 f' k a)) :=
+  λk, fiber_functor (@f k) (@f' k) (@p k) idp
 
 
 end seq_colim

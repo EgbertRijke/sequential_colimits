@@ -14,7 +14,7 @@ namespace seq_colim
 abbreviation ι  [constructor] := @inclusion
 abbreviation ι' [constructor] [parsing_only] {A} (f n) := @inclusion A f n
 
-variables {A A' : ℕ → Type} (f : seq_diagram A) (f' : seq_diagram A')
+variables {A A' A'' : ℕ → Type} (f : seq_diagram A) (f' : seq_diagram A') (f'' : seq_diagram A'')
 
 definition lrep_glue {n m : ℕ} (H : n ≤ m) (a : A n) : ι f (lrep f H a) = ι f a :=
 begin
@@ -82,53 +82,83 @@ end
 
 /- functorial action and equivalences -/
 section functor
-variables {f f'}
-variables (g : Π⦃n⦄, A n → A' n) (p : Π⦃n⦄ (a : A n), g (f a) = f' (g a))
+variables {f f' f''}
+variables (τ τ₂ : Π⦃n⦄, A n → A' n) (p : Π⦃n⦄ (a : A n), τ (f a) = f' (τ a))
+          (p₂ : Π⦃n⦄ (a : A n), τ₂ (f a) = f' (τ₂ a))
+          (τ' : Π⦃n⦄, A' n → A'' n) (p' : Π⦃n⦄ (a' : A' n), τ' (f' a') = f'' (τ' a'))
 include p
-
 definition seq_colim_functor [unfold 7] : seq_colim f → seq_colim f' :=
 begin
   intro x, induction x with n a n a,
-  { exact ι f' (g a)},
-  { exact ap (ι f') (p a) ⬝ glue f' (g a)}
+  { exact ι f' (τ a)},
+  { exact ap (ι f') (p a) ⬝ glue f' (τ a)}
 end
-
-theorem seq_colim_functor_glue {n : ℕ} (a : A n)
-  : ap (seq_colim_functor g p) (glue f a) = ap (ι f') (p a) ⬝ glue f' (g a) :=
-!elim_glue
-
 omit p
 
-definition is_equiv_seq_colim_functor [constructor] [H : Πn, is_equiv (@g n)]
-   : is_equiv (seq_colim_functor @g p) :=
-adjointify _ (seq_colim_functor (λn, (@g _)⁻¹) (λn a, inv_commute' g f f' p a))
+theorem seq_colim_functor_glue {n : ℕ} (a : A n)
+  : ap (seq_colim_functor τ p) (glue f a) = ap (ι f') (p a) ⬝ glue f' (τ a) :=
+!elim_glue
+
+definition seq_colim_functor_compose [constructor] (x : seq_colim f) :
+  seq_colim_functor (λn x, τ' (τ x)) (λn, hvconcat (@p n) (@p' n)) x =
+  seq_colim_functor τ' p' (seq_colim_functor τ p x)  :=
+begin
+  induction x, reflexivity,
+  apply eq_pathover, apply hdeg_square,
+  refine !seq_colim_functor_glue ⬝ _ ⬝ (ap_compose (seq_colim_functor _ _) _ _)⁻¹,
+  refine _ ⬝ (ap02 _ proof !seq_colim_functor_glue qed ⬝ !ap_con)⁻¹,
+  refine _ ⬝ (proof !ap_compose'⁻¹ ⬝ ap_compose (ι f'') _ _ qed ◾ proof !seq_colim_functor_glue qed)⁻¹,
+  exact whisker_right _ !ap_con ⬝ !con.assoc
+end
+
+variable (f)
+definition seq_colim_functor_id [constructor] (x : seq_colim f) :
+  seq_colim_functor (λn, id) (λn, homotopy.rfl) x =
+  x :=
+begin
+  induction x, reflexivity,
+  apply eq_pathover, apply hdeg_square,
+  exact !seq_colim_functor_glue ⬝ !idp_con ⬝ !ap_id⁻¹,
+end
+variables {f τ τ₂ p p₂}
+
+definition seq_colim_functor_homotopy [constructor] (q : τ ~2 τ₂)
+  (r : Π⦃n⦄ (a : A n), square (q (n+1) (f a)) (ap (@f' n) (q n a)) (p a) (p₂ a))
+  (x : seq_colim f) :
+  seq_colim_functor τ p x = seq_colim_functor τ₂ p₂ x  :=
+begin
+  induction x,
+    exact ap (ι f') (q n a),
+  apply eq_pathover,
+  refine !seq_colim_functor_glue ⬝ph _ ⬝hp !seq_colim_functor_glue⁻¹,
+  refine aps (ι f') (r a) ⬝v !ap_compose⁻¹ ⬝pv natural_square_tr (glue f') (q n a),
+end
+variables (τ τ₂ p p₂)
+
+definition is_equiv_seq_colim_functor [constructor] [H : Πn, is_equiv (@τ n)]
+   : is_equiv (seq_colim_functor @τ p) :=
+adjointify _ (seq_colim_functor (λn, (@τ _)⁻¹) (λn a, inv_commute' τ f f' p a))
            abstract begin
-             intro x, induction x,
-             { esimp, exact ap (ι _) (right_inv (@g _) a)},
-             { apply eq_pathover,
-               rewrite [ap_id, ap_compose (seq_colim_functor g p) (seq_colim_functor _ _),
-                 seq_colim_functor_glue _ _ a, ap_con, ▸*,
-                 seq_colim_functor_glue _ _ ((@g _)⁻¹ a), -ap_compose, ↑[function.compose],
-                 ap_compose (ι _) (@g _),ap_inv_commute',+ap_con, con.assoc,
-                 +ap_inv, inv_con_cancel_left, con.assoc, -ap_compose],
-               apply whisker_tl, apply move_left_of_top, esimp,
-               apply transpose, apply square_of_pathover, apply apd}
+             intro x,
+             refine !seq_colim_functor_compose⁻¹ ⬝ seq_colim_functor_homotopy _ _ x ⬝ !seq_colim_functor_id,
+             { intro n a, exact right_inv (@τ n) a },
+             { intro n a,
+               refine whisker_right _ !ap_inv_commute' ⬝ !inv_con_cancel_right ⬝ whisker_left _ !ap_inv ⬝ph _,
+               apply whisker_bl, apply whisker_tl, exact ids }
            end end
            abstract begin
-             intro x, induction x,
-             { esimp, exact ap (ι _) (left_inv (@g _) a)},
-             { apply eq_pathover,
-               rewrite [ap_id, ap_compose (seq_colim_functor _ _) (seq_colim_functor _ _),
-                 seq_colim_functor_glue _ _ a, ap_con,▸*, seq_colim_functor_glue _ _ (g a),
-                 -ap_compose, ↑[function.compose], ap_compose (ι _) (@g _)⁻¹, inv_commute'_fn,
-                 +ap_con, con.assoc, con.assoc, +ap_inv, con_inv_cancel_left, -ap_compose],
-               apply whisker_tl, apply move_left_of_top, esimp,
-               apply transpose, apply square_of_pathover, apply apd}
+             intro x,
+             refine !seq_colim_functor_compose⁻¹ ⬝ seq_colim_functor_homotopy _ _ x ⬝ !seq_colim_functor_id,
+             { intro n a, exact left_inv (@τ n) a },
+             { intro n a,
+               esimp [hvconcat],
+               refine whisker_left _ (!inv_commute'_fn ⬝ !con.assoc) ⬝ !con_inv_cancel_left ⬝ph _,
+               apply whisker_bl, apply whisker_tl, exact ids }
            end end
 
-definition seq_colim_equiv [constructor] (g : Π{n}, A n ≃ A' n)
-  (p : Π⦃n⦄ (a : A n), g (f a) = f' (g a)) : seq_colim f ≃ seq_colim f' :=
-equiv.mk _ (is_equiv_seq_colim_functor @g p)
+definition seq_colim_equiv [constructor] (τ : Π{n}, A n ≃ A' n)
+  (p : Π⦃n⦄ (a : A n), τ (f a) = f' (τ a)) : seq_colim f ≃ seq_colim f' :=
+equiv.mk _ (is_equiv_seq_colim_functor @τ p)
 
 definition seq_colim_rec_unc [unfold 4] {P : seq_colim f → Type}
   (v : Σ(Pincl : Π ⦃n : ℕ⦄ (a : A n), P (ι f a)),

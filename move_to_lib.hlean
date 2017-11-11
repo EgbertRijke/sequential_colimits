@@ -103,6 +103,7 @@ definition lift_succ2 [constructor] ⦃n : ℕ⦄ (x : fin n) : fin (succ n) :=
 fin.mk x (le.step (is_lt x))
 
 open fiber pointed
+/- move to fiber -/
 definition fiber_functor [constructor] {A A' B B' : Type} {f : A → B} {f' : A' → B'} {b : B} {b' : B'}
   (g : A → A') (h : B → B') (H : hsquare g h f f') (p : h b = b') (x : fiber f b) : fiber f' b' :=
 fiber.mk (g (point x)) (H (point x) ⬝ ap h (point_eq x) ⬝ p)
@@ -115,3 +116,23 @@ pmap.mk (fiber_functor g h H (respect_pt h))
       exact respect_pt g,
       exact !con.assoc ⬝ to_homotopy_pt H
   end
+
+-- TODO: use this in pfiber_pequiv_of_phomotopy
+definition fiber_equiv_of_homotopy {A B : Type} {f g : A → B} (h : f ~ g) (b : B)
+  : fiber f b ≃ fiber g b :=
+begin
+  refine (fiber.sigma_char f b ⬝e _ ⬝e (fiber.sigma_char g b)⁻¹ᵉ),
+  apply sigma_equiv_sigma_right, intros a,
+  apply equiv_eq_closed_left, apply h
+end
+
+definition fiber_equiv_of_square {A B C D : Type} {b : B} {d : D} {f : A → B} {g : C → D} (h : A ≃ C)
+  (k : B ≃ D) (s : k ∘ f ~ g ∘ h) (p : k b = d) : fiber f b ≃ fiber g d :=
+  calc fiber f b ≃ fiber (k ∘ f) (k b) : fiber.equiv_postcompose
+            ... ≃ fiber (k ∘ f) d : transport_fiber_equiv (k ∘ f) p
+            ... ≃ fiber (g ∘ h) d : fiber_equiv_of_homotopy s d
+            ... ≃ fiber g d : fiber.equiv_precompose
+
+definition fiber_equiv_of_triangle {A B C : Type} {b : B} {f : A → B} {g : C → B} (h : A ≃ C)
+  (s : f ~ g ∘ h) : fiber f b ≃ fiber g b :=
+fiber_equiv_of_square h erfl s idp
